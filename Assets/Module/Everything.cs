@@ -58,6 +58,7 @@ public class Everything : MonoBehaviour
 	public TextMesh[] _memButtonTexts;
 	public TextMesh _memDisplayText;
 	public MeshRenderer[] _memAdditional;
+	public TextMesh _memCountdownText;
 
 	// Complicated Wires Panel
 
@@ -109,13 +110,14 @@ public class Everything : MonoBehaviour
 
 	int _activePanel = -1;
 
-	public bool _isAnimating;
+	public bool _isAnimating = false;
 	public bool _finalOpen = false;
 	string[] _ignoreHighlights = new string[] { "ModuleHighlight" };
 	string[] _possibleModuleNames = new string[] { "Wires", "The Button", "Keypads", "Simon Says", "Who’s on First", "Memory", "Complicated Wires", "Wire Sequence", "Morse Code", "Password", "Maze" };
 	string _correctDigits = "";
 	bool[] _solvedPanels = new bool[4];
 	Coroutine _controller = null;
+    Coroutine _panelController = null;
 
 	string _chosenFinal;
 	PanelInterface _chosenFinalPanel;
@@ -126,18 +128,19 @@ public class Everything : MonoBehaviour
 	bool _clickedFinalButton;
 	bool _inShuffle;
 	bool _failSafe;
+	public bool _skipEnable;
 
 	int _moduleCounter = 0;
 	int _solveableModules;
 
-	string[] _ignoreList = new string[] 
-	{ 
-		"Everything", "14", "A>N<D", "Bamboozling Time Keeper", "Brainf---", "Busy Beaver", "Forget Enigma", 
-		"Forget Everything", "Forget Infinity", "Forget It Not", "Forget Me Not", "Forget Me Later", "Forget Perspective", 
-		"Forget The Colors", "Forget Them All", "Forget This", "Forget Us Not", "Iconic", "Kugelblitz", "Multitask", "OmegaForget", 
-		"Organization", "Password Destroyer", "Purgatory", "RPS Judging", "Simon Forgets", "Simon's Stages", "Souvenir", "Tallordered Keys", 
-		"The Time Keeper", "The Troll", "The Twin", "The Very Annoying Button", "Timing Is Everything", "Turn The Key", 
-		"Ultimate Custom Night", "Übermodule" 
+	string[] _ignoreList = new string[]
+	{
+		"Everything", "14", "A>N<D", "Bamboozling Time Keeper", "Brainf---", "Busy Beaver", "Forget Enigma",
+		"Forget Everything", "Forget Infinity", "Forget It Not", "Forget Me Not", "Forget Me Later", "Forget Perspective",
+		"Forget The Colors", "Forget Them All", "Forget This", "Forget Us Not", "Iconic", "Kugelblitz", "Multitask", "OmegaForget",
+		"Organization", "Password Destroyer", "Purgatory", "RPS Judging", "Simon Forgets", "Simon's Stages", "Souvenir", "Tallordered Keys",
+		"The Time Keeper", "The Troll", "The Twin", "The Very Annoying Button", "Timing Is Everything", "Turn The Key",
+		"Ultimate Custom Night", "Übermodule"
 	};
 
 	Color32[] _unlockTextColors = new Color32[]
@@ -168,12 +171,14 @@ public class Everything : MonoBehaviour
 			pi.GeneratePanel();
 			_correctDigits += pi.GetCorrectDigit().ToString();
 		}
+		/*int test = Array.IndexOf(_chosenModules.ToArray(), "Password");
+		if (test != -1) { _chosenPanels[test].GenerateFinalPanel(); _finalOpen = true; }*/
 		Debug.LogFormat("[Everything #{0}]: Taking all of the correct digits from each panel gives: {1}.", _modID, _correctDigits);
 		_solveableModules = _bomb.GetSolvableModuleNames().Where(x => !_ignoreList.Contains(x)).Count();
 		_panelUnlockCounter.text = _moduleCounter.ToString();
 		Debug.LogFormat("[Everything #{0}]: The final panel will open after all panels and its detected {1} solvable modules have been solved.", _modID, _solveableModules);
 
-		if (_solveableModules == 0 && _solvedPanels.All(x => x)) 
+		if (_solveableModules == 0 && _solvedPanels.All(x => x))
 		{
 			_failSafe = true;
 			Debug.LogFormat("[Everything #{0}]: Entering into failsafe due to all panels being instantly solved and no solveable modules.", _modID);
@@ -184,12 +189,12 @@ public class Everything : MonoBehaviour
 			l.range *= transform.lossyScale.x;
 		}
 
-		foreach (Vector3 vec in _moduleSelectors.Select(x => x.transform.localPosition)) 
+		foreach (Vector3 vec in _moduleSelectors.Select(x => x.transform.localPosition))
 		{
 			_buttonPos.Add(vec);
 		}
 
-		foreach (Vector3 vec in _moduleRenderers.Select(x => x.transform.localPosition)) 
+		foreach (Vector3 vec in _moduleRenderers.Select(x => x.transform.localPosition))
 		{
 			_renderPos.Add(vec);
 		}
@@ -198,22 +203,22 @@ public class Everything : MonoBehaviour
 
 	void FixedUpdate()
 	{
-		if (!_modSolved && !_finalOpen) 
-		{ 
-			if (_solvedPanels.All(x => x) && _solveableModules - _moduleCounter == 0) 
+		if (!_modSolved && !_finalOpen)
+		{
+			if (_solvedPanels.All(x => x) && _solveableModules - _moduleCounter == 0)
 			{
 				_finalOpen = true;
 				_panelUnlockCounter.GetComponent<Renderer>().enabled = false;
-				
+
 				StartCoroutine(StartFinalAnimation());
 				return;
 			}
-			if (_moduleCounter != _bomb.GetSolvedModuleNames().Count()) 
+			if (_moduleCounter != _bomb.GetSolvedModuleNames().Count())
 			{
 				_moduleCounter = _bomb.GetSolvedModuleNames().Count();
 				_panelUnlockCounter.text = _moduleCounter.ToString();
 			}
-			if (_solvedPanels.All(x => x) || _solveableModules - _moduleCounter == 0 && _panelUnlockCounter.color != _unlockTextColors[1]) 
+			if (_solvedPanels.All(x => x) || _solveableModules - _moduleCounter == 0 && _panelUnlockCounter.color != _unlockTextColors[1])
 			{
 				_panelUnlockCounter.color = _unlockTextColors[1];
 			}
@@ -226,7 +231,9 @@ public class Everything : MonoBehaviour
 	{
 		int index = Array.IndexOf(_moduleSelectors, but);
 
-		if (_finalOpen && index == 4 && !_isAnimating || _inShuffle) 
+		if (_isAnimating) return;
+
+		if (_finalOpen && index == 4 && !_isAnimating || _inShuffle)
 		{
 			if (_chosenFinal == null)
 			{
@@ -280,9 +287,9 @@ public class Everything : MonoBehaviour
 	void ChooseModules()
 	{
 		List<string> temp = new List<string>();
-		foreach (string moduleName in _bomb.GetSolvableModuleNames()) 
+		foreach (string moduleName in _bomb.GetSolvableModuleNames())
 		{
-			if (_possibleModuleNames.Any(x => x == moduleName)) 
+			if (_possibleModuleNames.Any(x => x == moduleName))
 			{
 				if (_chosenModules.Contains(moduleName)) continue;
 				_chosenModules.Add(moduleName);
@@ -290,7 +297,7 @@ public class Everything : MonoBehaviour
 			}
 		}
 		Debug.Log(_chosenModules.Count() != 0 ? String.Format("[Everything #{0}]: Found {1} modules on the bomb that Everything supports: {2}.", _modID, _chosenModules.Count(), _chosenModules.Join(", ")) : String.Format("[Everything #{0}]: Found no supported modules.", _modID));
-		if (_chosenModules.Count() != 4) 
+		if (_chosenModules.Count() != 4)
 		{
 			int co = _chosenModules.Count();
 			for (int i = 0; i < 4 - co; i++)
@@ -302,9 +309,9 @@ public class Everything : MonoBehaviour
 				}
 				_chosenModules.Add(_possibleModuleNames[module]);
 			}
-			Debug.LogFormat("[Everything #{0}]: Didn't find enough modules on the bomb that Everything supports. Adding {1} more from random vanillas: {2}", _modID, 4-temp.Count(), _chosenModules.Where(x => !temp.Contains(x)).Join(", "));
+			Debug.LogFormat("[Everything #{0}]: Didn't find enough modules on the bomb that Everything supports. Adding {1} more from random vanillas: {2}", _modID, 4 - temp.Count(), _chosenModules.Where(x => !temp.Contains(x)).Join(", "));
 		}
-		
+
 		int count = 0;
 		foreach (string mod in _chosenModules)
 		{
@@ -324,7 +331,7 @@ public class Everything : MonoBehaviour
 			km.GetComponent<Renderer>().material.color = new Color32(77, 77, 77, 255);
 		}
 		_moduleSelectors[n].GetComponent<Renderer>().material.color = new Color32(39, 39, 39, 255);
-		if (o == -1) return;
+		if (o == -1 || o == 4) return;
 		_moduleSelectors[o].GetComponent<Renderer>().material.color = _solvedPanels[o] ? new Color32(0, 169, 0, 255) : new Color32(77, 77, 77, 255);
 		return;
 	}
@@ -367,7 +374,7 @@ public class Everything : MonoBehaviour
 				}
 				return wof;
 			case "Memory":
-				Memory mem = new Memory(this, _modID, solvedIndex, _memButtons, _memButtonTexts, _memDisplayText, _memAdditional);
+				Memory mem = new Memory(this, _modID, solvedIndex, _memButtons, _memButtonTexts, _memDisplayText, _memAdditional, _memCountdownText);
 				foreach (KMSelectable km in _memButtons)
 				{
 					km.OnInteract = delegate () { mem.Interact(km); return false; };
@@ -433,19 +440,30 @@ public class Everything : MonoBehaviour
 
 	IEnumerator DelayComponents(int index, bool final)
 	{
-		if (final) 
+		_isAnimating = true;
+		if (final)
 		{
-			while (_isAnimating) { yield return new WaitForSeconds(0.1f); }
-			StartCoroutine(_chosenFinalPanel.ChangeBaseSize(0.025f));
-			while (_isAnimating) { yield return new WaitForSeconds(0.1f); }
-			StartCoroutine(_chosenFinalPanel.EnableComponents());
+			if (!_skipEnable) 
+			{
+				while (_panelController != null) { yield return null; }
+				_panelController = StartCoroutine(_chosenFinalPanel.ChangeBaseSize(0.025f));
+				while (_panelController != null) { yield return null; }
+				_panelController = StartCoroutine(_chosenFinalPanel.EnableComponents());
+				while (_panelController != null) { yield return null; }
+				_isAnimating = false;
+			}
 			yield break;
 		}
-		if (_activePanel != -1) { StartCoroutine(_chosenPanels[_activePanel].DisableComponents()); }
-		while (_isAnimating) { yield return new WaitForSeconds(0.1f); }
-		StartCoroutine(_chosenPanels[index].ChangeBaseSize(0.025f));
-		while (_isAnimating) { yield return new WaitForSeconds(0.1f); }
-		StartCoroutine(_chosenPanels[index].EnableComponents());
+        if (_activePanel != -1) { _panelController = StartCoroutine(_chosenPanels[_activePanel].DisableComponents()); }
+		while (_panelController != null) { yield return null; }
+		if (!_skipEnable)
+		{
+			_panelController = StartCoroutine(_chosenPanels[index].ChangeBaseSize(0.025f));
+			while (_panelController != null) { yield return null; }
+			_panelController = StartCoroutine(_chosenPanels[index].EnableComponents());
+			while (_panelController != null) { yield return null; }
+		}
+		_isAnimating = false;
 		yield break;
 	}
 
@@ -500,14 +518,17 @@ public class Everything : MonoBehaviour
 		return;
 	}
 
-	void Strike() 
+	public void Strike()
 	{
 		GetModule().HandleStrike();
 		if (_finalOpen)
 		{
-			for (int i = 0; i <= 4; i++) 
+			for (int i = 0; i <= 4; i++)
 			{
-				StartCoroutine(MoveModuleButton(new Transform[] { _moduleSelectors[i].transform, _moduleRenderers[i].transform }, 3f, 0.01f, 1f, 0.01f, new Vector3[] { _buttonPos[i], _renderPos[i] }));
+				_moduleSelectors[i].GetComponent<Renderer>().enabled = true;
+				_moduleRenderers[i].enabled = true;
+				_moduleSelectors[i].Highlight.gameObject.SetActive(true);
+				_controller = StartCoroutine(MoveModuleButton(new Transform[] { _moduleSelectors[i].transform, _moduleRenderers[i].transform }, 3f, 0.01f, 1f, 0.01f, new Vector3[] { _buttonPos[i], _renderPos[i] }));
 			}
 		}
 	}
@@ -527,15 +548,27 @@ public class Everything : MonoBehaviour
 		t.localPosition = Vector3.Lerp(t.localPosition, target, speed * Time.deltaTime);
 	}
 
-	void StartNextAnimation() 
+	void StartNextAnimation()
 	{
-		StopCoroutine(_controller);
-		_controller = null;
+		if (_controller != null)
+		{
+			StopCoroutine(_controller);
+			_controller = null;
+		}
 	}
 
-	IEnumerator StartFinalAnimation() 
+	public void StartNextPanelAnimation()
 	{
-		if (_failSafe) 
+		if (_panelController != null)
+		{
+			StopCoroutine(_panelController);
+			_panelController = null;
+		}
+	}
+
+	IEnumerator StartFinalAnimation()
+	{
+		if (_failSafe)
 		{
 			_failSafeText.text = "Fail";
 			yield return new WaitForSeconds(0.5f);
@@ -544,7 +577,7 @@ public class Everything : MonoBehaviour
 			_failSafeText.text = _correctDigits;
 		}
 
-		if (_activePanel != -1) 
+		if (_activePanel != -1)
 		{
 			_controller = StartCoroutine(_chosenPanels[_activePanel].DisableComponents());
 		}
@@ -559,7 +592,7 @@ public class Everything : MonoBehaviour
 
 		while (_controller != null) yield return null;
 
-		for (int i = 0; i <= 3; i++) 
+		for (int i = 0; i <= 3; i++)
 		{
 			_moduleRenderers[i].enabled = false;
 			_moduleSelectors[i].GetComponent<Renderer>().enabled = false;
@@ -576,12 +609,12 @@ public class Everything : MonoBehaviour
 		yield break;
 	}
 
-	IEnumerator MoveModuleButtons(float stopSpeed, float delayIncrease, float speed, float speedIncrease, Vector3[] targets) 
+	IEnumerator MoveModuleButtons(float stopSpeed, float delayIncrease, float speed, float speedIncrease, Vector3[] targets)
 	{
 		_isAnimating = true;
 		Transform[] buttons = _moduleSelectors.Where(x => x.gameObject.name != "Module3").Select(x => x.transform).ToArray();
 		Transform[] sprites = _moduleRenderers.Where(x => x.gameObject.name != "MSprite3").Select(x => x.transform).ToArray();
-		while (speed < stopSpeed) 
+		while (speed < stopSpeed)
 		{
 			MoveButtons(buttons, targets[0], speed);
 			MoveButtons(sprites, targets[1], speed);
@@ -593,7 +626,7 @@ public class Everything : MonoBehaviour
 		yield break;
 	}
 
-	IEnumerator MoveModuleButton(Transform[] ts, float stopSpeed, float delayIncrease, float speed, float speedIncrease, Vector3[] targets) 
+	IEnumerator MoveModuleButton(Transform[] ts, float stopSpeed, float delayIncrease, float speed, float speedIncrease, Vector3[] targets)
 	{
 		_isAnimating = true;
 		while (speed < stopSpeed)
@@ -606,15 +639,15 @@ public class Everything : MonoBehaviour
 		_isAnimating = false;
 	}
 
-	IEnumerator ShuffleModuleIcons(float switchDelay, SpriteRenderer renderer, Sprite[] sprites) 
+	IEnumerator ShuffleModuleIcons(float switchDelay, SpriteRenderer renderer, Sprite[] sprites)
 	{
 		int index = 0;
 		_inShuffle = true;
-		while (!_clickedFinalButton) 
+		while (!_clickedFinalButton)
 		{
 			renderer.sprite = sprites[index];
 			index++;
-			if (index >= sprites.Length) 
+			if (index >= sprites.Length)
 			{
 				index = 0;
 			}

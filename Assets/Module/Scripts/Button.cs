@@ -65,7 +65,7 @@ public class Button : PanelInterface
 		};
 		string[] colorNames = new string[] { "Red", "Blue", "White", "Yellow" };
 		string[] buttonWords = new string[] { "HOLD:0.0004", "PRESS:0.0004", "DETONATE:0.000225", "ABORT:0.00035" };
-		if (colorNames[_finalColor] == "White") 
+		if (colorNames[_finalColor] == "White")
 		{
 			_buttonText.color = new Color32(0, 0, 0, 255);
 		}
@@ -97,11 +97,11 @@ public class Button : PanelInterface
 		_module.StopAllCoroutines();
 		int sec = (int)_module.GetBombInfo().GetTime() % 10;
 		_module.StartCoroutine(LowerStrip());
-		if (_module.GetFinalState()) 
+		if (_module.GetFinalState())
 		{
 			if (_requestingTap && holding)
 			{
-				_module.GetModule().HandleStrike();
+				_module.Strike();
 				Debug.LogFormat("[Everything #{0}]: The Button was requesting a tap and not a hold.", _modID);
 				return;
 			}
@@ -118,7 +118,7 @@ public class Button : PanelInterface
 				}
 				else
 				{
-					_module.GetModule().HandleStrike();
+					_module.Strike();
 					Debug.LogFormat("[Everything #{0}]: The Button expected a tap at {1} but was tapped at {2}.", _modID, _x, sec);
 					return;
 				}
@@ -136,14 +136,14 @@ public class Button : PanelInterface
 				}
 				else
 				{
-					_module.GetModule().HandleStrike();
+					_module.Strike();
 					Debug.LogFormat("[Everything #{0}]: The Button expected a releasing at {1} but was released at {2}.", _modID, _holdx, sec);
 					return;
 				}
 			}
-			else 
+			else
 			{
-				_module.GetModule().HandleStrike();
+				_module.Strike();
 				Debug.LogFormat("[Everything #{0}]: The Button was requesting a hold and not a tap.", _modID);
 				return;
 			}
@@ -156,7 +156,7 @@ public class Button : PanelInterface
 		}
 		else
 		{
-			_module.GetModule().HandleStrike();
+			_module.Strike();
 			Debug.LogFormat("[Everything #{0}]: There was a strike on the Button panel. Released at {1} but expected {2}.", _modID, sec, _correctDigit);
 			return;
 		}
@@ -174,9 +174,9 @@ public class Button : PanelInterface
 
 	public override IEnumerator EnableComponents()
 	{
-		_module._isAnimating = true;
 
-		if (_module.GetFinalState()) 
+
+		if (_module.GetFinalState())
 		{
 			_buttonText.GetComponent<Renderer>().enabled = true;
 		}
@@ -185,13 +185,13 @@ public class Button : PanelInterface
 		_button.Highlight.gameObject.SetActive(true);
 		_strip.GetComponent<Renderer>().enabled = true;
 		yield return new WaitForSeconds(0.25f);
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator DisableComponents()
 	{
-		_module._isAnimating = true;
+
 
 		if (_module.GetFinalState())
 		{
@@ -203,13 +203,13 @@ public class Button : PanelInterface
 		yield return new WaitForSeconds(0.5f);
 		_strip.GetComponent<Renderer>().enabled = false;
 		yield return new WaitForSeconds(0.25f);
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator ChangeBaseSize(float delay)
 	{
-		_module._isAnimating = true;
+
 		Vector3 baseSize = GetBaseSize();
 		Transform baseTrans = _module._moduleBasePanel.transform;
 		while (true)
@@ -229,7 +229,7 @@ public class Button : PanelInterface
 			yield return new WaitForSeconds(delay);
 		}
 		baseTrans.localScale = baseSize;
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
@@ -257,13 +257,13 @@ public class Button : PanelInterface
 		{
 			_finalStripColor = rnd.Range(0, 4);
 			int[] nums = new int[] { 0, 1, 4, 5 };
-			int[] time = new int[] { 1, 1, 4, 5  };
+			int[] time = new int[] { 1, 1, 4, 5 };
 			string[] names = new string[] { "White", "Red", "Blue", "Yellow" };
 			Debug.Log(
-				_requestingTap ? 
-				String.Format("[Everything #{0}]: Unfortunately, holding was not the action the module asked for.", _modID) : 
-				String.Format("[Everything #{0}]: Upon the button being held, the strip color is {1} which is release on {2}+{3} which the last digit is a {4}.", _modID, names[_finalStripColor], _x, time[_finalStripColor], (_x+time[_finalStripColor])%10));
-			_holdx = (_x + time[_finalStripColor])%10;
+				_requestingTap ?
+				String.Format("[Everything #{0}]: Unfortunately, holding was not the action the module asked for.", _modID) :
+				String.Format("[Everything #{0}]: Upon the button being held, the strip color is {1} which is release on {2}+{3} which the last digit is a {4}.", _modID, names[_finalStripColor], _x, time[_finalStripColor], (_x + time[_finalStripColor]) % 10));
+			_holdx = (_x + time[_finalStripColor]) % 10;
 			_strip.material = _stripColors[nums[_finalStripColor]];
 		}
 		_module.StartCoroutine(RaiseStrip());
@@ -301,7 +301,7 @@ public class Button : PanelInterface
 		yield break;
 	}
 
-	bool GetButtonRule() 
+	bool GetButtonRule()
 	{
 		/*string[] colorNames = new string[] { "Red", "Blue", "White", "Yellow" };
 		string[] buttonWords = new string[] { "HOLD:0.0004", "PRESS:0.0004", "DETONATE:0.000225", "ABORT:0.00035" };*/
@@ -311,10 +311,10 @@ public class Button : PanelInterface
 		if (_module.GetBombInfo().GetOnIndicators().Any(x => x == "FRK") && _module.GetBombInfo().GetBatteryCount() >= 3) litfrk3bat = true;
 		if (_module.GetBombInfo().GetBatteryCount() >= 2) bat2 = true;
 		if (_module.GetBombInfo().GetIndicators().Any(x => x == "CAR")) car = true;
-		switch (_finalWord) 
+		switch (_finalWord)
 		{
 			case 0:
-				switch (_finalColor) 
+				switch (_finalColor)
 				{
 					case 0:
 						return true;
@@ -329,7 +329,7 @@ public class Button : PanelInterface
 						return false;
 				}
 			case 1:
-				switch (_finalColor) 
+				switch (_finalColor)
 				{
 					case 0:
 					case 1:

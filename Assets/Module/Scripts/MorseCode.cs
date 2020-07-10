@@ -7,7 +7,8 @@ using UnityEngine;
 using KModkit;
 using rnd = UnityEngine.Random;
 
-public class MorseCode : PanelInterface {
+public class MorseCode : PanelInterface
+{
 
 	Everything _module;
 	int _modID;
@@ -45,18 +46,18 @@ public class MorseCode : PanelInterface {
 		this._solvedIndex = _solvedIndex;
 		this._morseLight = _morseLight;
 		this._morseButtons = _morseButtons;
-		this._finalObject = _finalObject; 
+		this._finalObject = _finalObject;
 	}
 
 	public override void GeneratePanel()
 	{
 		_chosenWord = _possibleWords[rnd.Range(0, _possibleWords.Length)].Split(':');
 		char[] alphabet = Enumerable.Range(0, 26).Select(x => (char)(x + 'a')).ToArray();
-		foreach (char c in _chosenWord[0]) 
+		foreach (char c in _chosenWord[0])
 		{
 			_morseCodeForWord.Add(_morseCodes[Array.IndexOf(alphabet, c)]);
 		}
-		
+
 		_correctDigit = int.Parse(_chosenWord[1][2].ToString());
 
 		Debug.LogFormat("[Everything #{0}]: The Morse Code panel was generated with the word {1}. The frequency for this word is {2}. The correct digit for this panel is: {3}.", _modID, _chosenWord[0].ToUpper(), _chosenWord[1], _correctDigit);
@@ -68,15 +69,15 @@ public class MorseCode : PanelInterface {
 		int digits = int.Parse(_module.GetCorrectDigits());
 
 		int rndNumber = rnd.Range(1000, 10000);
-		foreach (char c in rndNumber.ToString()) 
+		foreach (char c in rndNumber.ToString())
 		{
 			char[] nums = new char[] { '1', '2', '3', '4', '5', '6', '7', '8', '9', '0' };
 			_morseCodeForNumber.Add(_morseCodes[26 + Array.IndexOf(nums, c)]);
 		}
 
-		_multipliedNumbers = (digits+rndNumber).ToString().Replace("0", "").Select(x => int.Parse(x.ToString())).ToList();
-		int size = _multipliedNumbers.Count()-1;
-		for (int i = 0; i < size; i++) 
+		_multipliedNumbers = (digits + rndNumber).ToString().Replace("0", "").Select(x => int.Parse(x.ToString())).ToList();
+		int size = _multipliedNumbers.Count() - 1;
+		for (int i = 0; i < size; i++)
 		{
 			int num = _multipliedNumbers[0];
 			_multipliedNumbers[0] = num * _multipliedNumbers[1];
@@ -88,10 +89,10 @@ public class MorseCode : PanelInterface {
 		int[] allFreq = new int[_possibleWords.Length];
 		int[] allDiff = new int[_possibleWords.Length];
 		int count = 0;
-		foreach (string word in _possibleWords) 
+		foreach (string word in _possibleWords)
 		{
 			string[] split = word.Split(':');
-			if (count == _possibleWords.Length - 1) 
+			if (count == _possibleWords.Length - 1)
 			{
 				allFreq[count] = 100;
 				allDiff[count] = Math.Abs(_selectedNumber - allFreq[count]);
@@ -103,9 +104,9 @@ public class MorseCode : PanelInterface {
 		}
 		List<int> sortedDiff = allDiff.ToList();
 		sortedDiff.Sort();
-		for (int i = 0; i < allDiff.Length; i++) 
+		for (int i = 0; i < allDiff.Length; i++)
 		{
-			if (allDiff[i] == sortedDiff[0]) 
+			if (allDiff[i] == sortedDiff[0])
 			{
 				_selectedFrequences.Add(float.Parse(_possibleWords[i].Split(':')[1]));
 			}
@@ -117,7 +118,7 @@ public class MorseCode : PanelInterface {
 	{
 		int index = Array.IndexOf(_morseButtons, km);
 		TextMesh freq = _finalObject.GetComponentsInChildren<TextMesh>().Where(x => x.gameObject.name == "FrequencyText").ToList()[0];
-		switch (index) 
+		switch (index)
 		{
 			case 0:
 				if (_freqIndex == 0) return;
@@ -125,14 +126,14 @@ public class MorseCode : PanelInterface {
 				freq.text = _possibleWords[_freqIndex].Split(':')[1];
 				break;
 			case 1:
-				if (_freqIndex == _possibleWords.Length-1) return;
+				if (_freqIndex == _possibleWords.Length - 1) return;
 				_freqIndex++;
 				freq.text = _possibleWords[_freqIndex].Split(':')[1];
 				break;
 			case 2:
 				if (!_selectedFrequences.Contains(float.Parse(freq.text)))
 				{
-					_module.GetModule().HandleStrike();
+					_module.Strike();
 					Debug.LogFormat("[Everything #{0}]: The frequency of {1} is incorrect, expecting one of the following: {2}.", _modID, freq.text, _selectedFrequences.Join(", "));
 					return;
 				}
@@ -170,10 +171,9 @@ public class MorseCode : PanelInterface {
 
 	public override IEnumerator EnableComponents()
 	{
-		_module._isAnimating = true;
 		_morseLight.material.color = unlit;
 		_morseLight.enabled = true;
-		if (_module.GetFinalState()) 
+		if (_module.GetFinalState())
 		{
 			TextMesh freq = _finalObject.GetComponentsInChildren<TextMesh>().Where(x => x.gameObject.name == "FrequencyText").ToList()[0];
 			freq.text = _possibleWords[_freqIndex].Split(':')[1];
@@ -182,7 +182,7 @@ public class MorseCode : PanelInterface {
 				mr.enabled = true;
 				yield return new WaitForSeconds(.1f);
 			}
-			
+
 		}
 		yield return new WaitForSeconds(1.5f);
 		if (_module.GetFinalState())
@@ -197,13 +197,13 @@ public class MorseCode : PanelInterface {
 		{
 			c = _module.StartCoroutine(SendMorse(_morseCodeForWord));
 		}
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator DisableComponents()
 	{
-		_module._isAnimating = true;
+
 		if (_module.GetFinalState())
 		{
 			foreach (KMSelectable km in _finalObject.GetComponentsInChildren<KMSelectable>())
@@ -216,19 +216,19 @@ public class MorseCode : PanelInterface {
 				yield return new WaitForSeconds(.1f);
 			}
 		}
-		if (c != null) 
+		if (c != null)
 		{
 			_module.StopCoroutine(c);
 			c = null;
 		}
 		_morseLight.enabled = false;
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator ChangeBaseSize(float delay)
 	{
-		_module._isAnimating = true;
+
 		Vector3 baseSize = GetBaseSize();
 		Transform baseTrans = _module._moduleBasePanel.transform;
 		while (true)
@@ -248,7 +248,7 @@ public class MorseCode : PanelInterface {
 			yield return new WaitForSeconds(delay);
 		}
 		baseTrans.localScale = baseSize;
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
@@ -268,9 +268,9 @@ public class MorseCode : PanelInterface {
 		return new Vector3(0.085f, 0.01f, 0.085f);
 	}
 
-	IEnumerator SendMorse(List<string> word) 
+	IEnumerator SendMorse(List<string> word)
 	{
-		while (true) 
+		while (true)
 		{
 			foreach (string let in word)
 			{

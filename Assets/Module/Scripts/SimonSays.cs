@@ -25,6 +25,7 @@ public class SimonSays : PanelInterface
 	int _chosenStrikes = 0;
 	int _input = 0;
 	bool _stopFlashes = false;
+	bool _nextStage = false;
 
 	string[] _finalSequence;
 	string[] _finalFlashes;
@@ -77,12 +78,12 @@ public class SimonSays : PanelInterface
 	{
 		int digital = _module.GetDigitalRoot(int.Parse(_module.GetCorrectDigits()));
 
-		foreach (MeshRenderer mr in _buttons.Select(x => x.GetComponent<Renderer>())) 
+		foreach (MeshRenderer mr in _buttons.Select(x => x.GetComponent<Renderer>()))
 		{
 			mr.material.color = new Color32(33, 33, 33, 255);
 		}
 
-		foreach (Light l in _buttonLights) 
+		foreach (Light l in _buttonLights)
 		{
 			l.color = new Color32(50, 199, 199, 255);
 		}
@@ -122,7 +123,7 @@ public class SimonSays : PanelInterface
 		int index = Array.IndexOf(_buttons, km);
 		_module.StartCoroutine(PressFlash(0.6f, index));
 
-		if (_module.GetFinalState()) 
+		if (_module.GetFinalState())
 		{
 			string actual = _finalSequence[GetActualColor(index)];
 
@@ -150,7 +151,7 @@ public class SimonSays : PanelInterface
 			}
 			else
 			{
-				_module.GetComponent<KMBombModule>().HandleStrike();
+				_module.Strike();
 				Debug.LogFormat("[Everything #{0}]: Incorrect button press on the Simon Says panel. Expected {1} but recieved {2}.", _modID, _colors[1][_input], actual);
 				_input = 0;
 				_module.StartCoroutine(SequenceFlashes(0.5f, 0.5f, 1.75f, _currentSequence));
@@ -172,6 +173,7 @@ public class SimonSays : PanelInterface
 			seq.Add(_colors[0][_input + 1]);
 			_currentSequence = seq.ToArray();
 			_input = 0;
+			_nextStage = true;
 			_module.StartCoroutine(SequenceFlashes(0.5f, 0.5f, 1.75f, _currentSequence));
 			return;
 		}
@@ -183,7 +185,7 @@ public class SimonSays : PanelInterface
 		}
 		else
 		{
-			_module.GetComponent<KMBombModule>().HandleStrike();
+			_module.Strike();
 			Debug.LogFormat("[Everything #{0}]: Incorrect button press on the Simon Says panel. Expected {1} but recieved {2}.", _modID, _colors[1][_input], color);
 			_input = 0;
 			_module.StartCoroutine(SequenceFlashes(0.5f, 0.5f, 1.75f, _currentSequence));
@@ -209,7 +211,7 @@ public class SimonSays : PanelInterface
 
 	public override IEnumerator EnableComponents()
 	{
-		_module._isAnimating = true;
+
 		_strikes.GetComponent<Renderer>().enabled = true;
 		yield return new WaitForSeconds(0.25f);
 		foreach (KMSelectable km in _buttons)
@@ -218,15 +220,16 @@ public class SimonSays : PanelInterface
 			km.Highlight.gameObject.SetActive(true);
 			yield return new WaitForSeconds(0.25f);
 		}
+		_nextStage = true;
 		_module.StartCoroutine(SequenceFlashes(0.5f, 0.5f, 1.75f, _currentSequence));
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator DisableComponents()
 	{
 		_stopFlashes = true;
-		_module._isAnimating = true;
+
 		foreach (Light l in _buttonLights)
 		{
 			l.enabled = false;
@@ -239,13 +242,13 @@ public class SimonSays : PanelInterface
 			km.Highlight.gameObject.SetActive(false);
 			yield return new WaitForSeconds(0.25f);
 		}
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator ChangeBaseSize(float delay)
 	{
-		_module._isAnimating = true;
+
 		Vector3 baseSize = GetBaseSize();
 		Transform baseTrans = _module._moduleBasePanel.transform;
 		while (true)
@@ -265,7 +268,7 @@ public class SimonSays : PanelInterface
 			yield return new WaitForSeconds(delay);
 		}
 		baseTrans.localScale = baseSize;
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
@@ -295,6 +298,7 @@ public class SimonSays : PanelInterface
 
 	IEnumerator SequenceFlashes(float on, float off, float reset, string[] colors)
 	{
+		if (_nextStage) yield return new WaitForSeconds(reset);
 		while (true)
 		{
 			foreach (string c in colors)
@@ -457,9 +461,9 @@ public class SimonSays : PanelInterface
 		return colors.ToArray();
 	}
 
-	string[] GetColorSequence(int index) 
+	string[] GetColorSequence(int index)
 	{
-		switch (index) 
+		switch (index)
 		{
 			case 0:
 				return new string[] { "Blue", "Yellow", "Green", "Red" };
@@ -486,9 +490,9 @@ public class SimonSays : PanelInterface
 		}
 	}
 
-	int GetActualColor(int index) 
+	int GetActualColor(int index)
 	{
-		switch (index) 
+		switch (index)
 		{
 			case 0:
 				return 0;

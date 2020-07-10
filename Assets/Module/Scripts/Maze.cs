@@ -7,7 +7,8 @@ using UnityEngine;
 using KModkit;
 using rnd = UnityEngine.Random;
 
-public class Maze : PanelInterface {
+public class Maze : PanelInterface
+{
 
 	Everything _module;
 	int _modID;
@@ -93,13 +94,13 @@ public class Maze : PanelInterface {
 		_chosenMaze = rnd.Range(0, 9);
 		_chosenMazeGrid = _AllMazes[_chosenMaze].Split(':');
 
-		_correctDigit = _chosenMaze+1;
+		_correctDigit = _chosenMaze + 1;
 
-		Debug.LogFormat("[Everything #{0}]: The Maze panel was generated with the maze {1}. The correct digit for this panel is: {2}.", _modID, _chosenMaze+1, _correctDigit);
+		Debug.LogFormat("[Everything #{0}]: The Maze panel was generated with the maze {1}. The correct digit for this panel is: {2}.", _modID, _chosenMaze + 1, _correctDigit);
 		HandlePanelSolve();
 	}
 
-	public override void GenerateFinalPanel() 
+	public override void GenerateFinalPanel()
 	{
 		int[] digits = _module.GetCorrectDigits().Select(x => int.Parse(x.ToString())).ToArray();
 
@@ -110,7 +111,7 @@ public class Maze : PanelInterface {
 		_curPosition = GetPosition(digits[0] % 6, digits[1] % 6);
 		_redTriangle = GetPosition(digits[2] % 6, digits[3] % 6);
 
-		foreach (MeshRenderer mr in _allIndicators) 
+		foreach (MeshRenderer mr in _allIndicators)
 		{
 			mr.material.color = _base;
 		}
@@ -119,14 +120,14 @@ public class Maze : PanelInterface {
 		_allIndicators[indicators[0]].material.color = _indiColor;
 		_allIndicators[indicators[1]].material.color = _indiColor;
 
-		Debug.LogFormat("[Everything #{0}]: The final panel was generated as Maze. Maze generated was {1}. Red triangle and White LED are at positions in reading order {2} and {3}, respectively.", _modID, maze+1, _redTriangle+1, _curPosition+1);
+		Debug.LogFormat("[Everything #{0}]: The final panel was generated as Maze. Maze generated was {1}. Red triangle and White LED are at positions in reading order {2} and {3}, respectively.", _modID, maze + 1, _redTriangle + 1, _curPosition + 1);
 	}
 
 	public override void Interact(KMSelectable km)
 	{
 		int index = Array.IndexOf(_mazeArrows, km);
 		if (_module._modSolved || _module._isAnimating) return;
-		if (_module.GetFinalState() && km.gameObject.name == "MazeReset") 
+		if (_module.GetFinalState() && km.gameObject.name == "MazeReset")
 		{
 			_curPosition = _finalStartingPosition;
 			Debug.LogFormat("[Everything #{0}]: Maze reset button pressed. Reverting to starting position...", _modID);
@@ -137,17 +138,17 @@ public class Maze : PanelInterface {
 		bool wall = HandleMazeMovement(_curPosition, index);
 		if (!wall)
 		{
-			if (_module.GetFinalState()) 
+			if (_module.GetFinalState())
 			{
-				_module.GetModule().HandleStrike();
+				_module.Strike();
 				Debug.LogFormat("[Everything #{0}]: Struck! Hit a wall when trying to move.", _modID);
 				return;
 			}
 			UpdateStrike(index, true);
-			return; 
+			return;
 		}
 		UpdateStrike(index, false);
-		switch (index) 
+		switch (index)
 		{
 			case 0:
 				if (_curPosition - 6 < 0) break;
@@ -159,7 +160,7 @@ public class Maze : PanelInterface {
 				}
 				break;
 			case 1:
-				if ((_curPosition%6)+1 > 5) break;
+				if ((_curPosition % 6) + 1 > 5) break;
 				_curPosition++;
 				if (!_module.GetFinalState())
 				{
@@ -179,7 +180,7 @@ public class Maze : PanelInterface {
 			case 3:
 				if ((_curPosition % 6) - 1 < 0) break;
 				_curPosition--;
-				if (!_module.GetFinalState()) 
+				if (!_module.GetFinalState())
 				{
 					_allIndicators[_statPosition].material.color = _base;
 					_allIndicators[_curPosition].material.color = _currentPos;
@@ -189,12 +190,12 @@ public class Maze : PanelInterface {
 				break;
 		}
 
-		if (_curPosition == _redTriangle) 
+		if (_curPosition == _redTriangle)
 		{
 			Debug.LogFormat("[Everything #{0}]: LED was moved to the red triangle successfully. Module solved.", _modID);
 			_module._modSolved = true;
 			_module.GetModule().HandlePass();
-			foreach (MeshRenderer mr in _allIndicators) 
+			foreach (MeshRenderer mr in _allIndicators)
 			{
 				mr.material.color = new Color32(0, 255, 0, 255);
 			}
@@ -221,7 +222,6 @@ public class Maze : PanelInterface {
 
 	public override IEnumerator EnableComponents()
 	{
-		_module._isAnimating = true;
 		_mazeBase.SetActive(true);
 		yield return new WaitForSeconds(.1f);
 		foreach (KMSelectable km in _mazeArrows)
@@ -238,23 +238,22 @@ public class Maze : PanelInterface {
 			_mazeLED.enabled = true;
 			_mazeText.GetComponent<Renderer>().enabled = true;
 		}
-		else 
+		else
 		{
 			_mazeReset.GetComponent<Renderer>().enabled = true;
 			_mazeReset.Highlight.gameObject.SetActive(true);
 		}
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator DisableComponents()
 	{
-		_module._isAnimating = true;
 		_mazeLED.enabled = false;
 		_mazeText.GetComponent<Renderer>().enabled = false;
 		yield return new WaitForSeconds(.1f);
 		_mazeReset.Highlight.gameObject.SetActive(false);
-		foreach (KMHighlightable kh in _mazeArrows.Select(x => x.Highlight)) 
+		foreach (KMHighlightable kh in _mazeArrows.Select(x => x.Highlight))
 		{
 			kh.gameObject.SetActive(false);
 		}
@@ -265,13 +264,13 @@ public class Maze : PanelInterface {
 		}
 		_mazeReset.GetComponent<Renderer>().enabled = false;
 		_mazeBase.SetActive(false);
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator ChangeBaseSize(float delay)
 	{
-		_module._isAnimating = true;
+
 		Vector3 baseSize = GetBaseSize();
 		Transform baseTrans = _module._moduleBasePanel.transform;
 		while (true)
@@ -291,7 +290,7 @@ public class Maze : PanelInterface {
 			yield return new WaitForSeconds(delay);
 		}
 		baseTrans.localScale = baseSize;
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
@@ -315,13 +314,13 @@ public class Maze : PanelInterface {
 	{
 		int row = position / 6;
 		int col = position % 6;
-		string movement  = _chosenMazeGrid[row].Split(',')[col];
+		string movement = _chosenMazeGrid[row].Split(',')[col];
 		return movement.Any(x => int.Parse(x.ToString()) == direction);
 	}
 
-	void UpdateStrike(int direction, bool strike) 
+	void UpdateStrike(int direction, bool strike)
 	{
-		if (strike) 
+		if (strike)
 		{
 			_mazeText.text = "URDL"[direction].ToString();
 			_mazeLED.material.color = _strike;

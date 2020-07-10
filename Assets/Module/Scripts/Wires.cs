@@ -89,9 +89,9 @@ public class Wires : PanelInterface
 		int rule = _module.GetCorrectDigits().Select(x => int.Parse(x.ToString())).ToList().Sum() % 17;
 		bool done = false;
 
-		while (!done) 
+		while (!done)
 		{
-			switch (rule) 
+			switch (rule)
 			{
 				case 4:
 				case 9:
@@ -109,39 +109,39 @@ public class Wires : PanelInterface
 			}
 		}
 
-		foreach (MeshRenderer mr in _wires.Select(x => x.GetComponent<Renderer>())) 
+		foreach (MeshRenderer mr in _wires.Select(x => x.GetComponent<Renderer>()))
 		{
 			mr.material = _wireColors[0];
 		}
-		foreach (MeshRenderer mr in _cutWires) 
+		foreach (MeshRenderer mr in _cutWires)
 		{
 			mr.material = _wireColors[0];
 		}
 
 		_correctCut = wireNumbers[rule];
 
-		Debug.LogFormat("[Everything #{0}]: The final panel was generated as Wires and will have rule {1} being applied meaning that the wire to be cut is {2}.", _modID, rule+1, _correctCut+1);
+		Debug.LogFormat("[Everything #{0}]: The final panel was generated as Wires and will have rule {1} being applied meaning that the wire to be cut is {2}.", _modID, rule + 1, _correctCut + 1);
 	}
 
 	public override IEnumerator EnableComponents()
 	{
-		_module._isAnimating = true;
-		if (_module.GetFinalState()) 
+
+		if (_module.GetFinalState())
 		{
-			for (int i = 0; i <= 5; i++) 
+			for (int i = 0; i <= 5; i++)
 			{
 				_wires[i].GetComponent<Renderer>().enabled = true;
 				foreach (MeshRenderer mr in _wires[i].GetComponentsInChildren<MeshRenderer>())
 				{
 					if (mr.gameObject.name.Contains("Filler") || mr.gameObject.name.Contains("Holder")) mr.enabled = true;
 				}
-				foreach (KMHighlightable kh in _wires.Select(x => x.Highlight)) 
+				foreach (KMHighlightable kh in _wires.Select(x => x.Highlight))
 				{
 					kh.gameObject.SetActive(true);
 				}
 				yield return new WaitForSeconds(0.1f);
 			}
-			_module._isAnimating = false;
+			_module.StartNextPanelAnimation();
 			yield break;
 		}
 
@@ -154,13 +154,13 @@ public class Wires : PanelInterface
 			}
 			yield return new WaitForSeconds(0.1f);
 		}
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator DisableComponents()
 	{
-		_module._isAnimating = true;
+
 		for (int i = 5; i >= 0; i--)
 		{
 			if (_chosenPos.Contains(i)) { _wires[i].GetComponent<Renderer>().enabled = false; }
@@ -170,13 +170,13 @@ public class Wires : PanelInterface
 			}
 			yield return new WaitForSeconds(0.1f);
 		}
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator ChangeBaseSize(float delay)
 	{
-		_module._isAnimating = true;
+
 		Vector3 baseSize = GetBaseSize();
 		Transform baseTrans = _module._moduleBasePanel.transform;
 		while (true)
@@ -196,7 +196,7 @@ public class Wires : PanelInterface
 			yield return new WaitForSeconds(delay);
 		}
 		baseTrans.localScale = baseSize;
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
@@ -208,10 +208,10 @@ public class Wires : PanelInterface
 		if (_module.GetFinalState())
 		{
 			if (_cut[index]) return;
-			if (index != _correctCut) 
+			if (index != _correctCut)
 			{
-				_module.GetModule().HandleStrike();
-				Debug.LogFormat("[Everything #{0}]: Wire cut was {1} when expected cut was {2}.", _modID, index+1, _correctCut+1);
+				_module.Strike();
+				Debug.LogFormat("[Everything #{0}]: Wire cut was {1} when expected cut was {2}.", _modID, index + 1, _correctCut + 1);
 				_cutWires[index].gameObject.SetActive(true);
 				_wires[index].Highlight.gameObject.SetActive(false);
 				_wires[index].GetComponent<Renderer>().enabled = false;
@@ -222,7 +222,7 @@ public class Wires : PanelInterface
 			_wires[index].Highlight.gameObject.SetActive(false);
 			_wires[index].GetComponent<Renderer>().enabled = false;
 			_cut[index] = true;
-			Debug.LogFormat("[Everything #{0}]: Wire cut was {1} and that is correct! Module has been solved!", _modID, index+1);
+			Debug.LogFormat("[Everything #{0}]: Wire cut was {1} and that is correct! Module has been solved!", _modID, index + 1);
 			_module.GetModule().HandlePass();
 			_module._modSolved = true;
 		}

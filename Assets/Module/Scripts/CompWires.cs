@@ -7,7 +7,8 @@ using UnityEngine;
 using KModkit;
 using rnd = UnityEngine.Random;
 
-public class CompWires : PanelInterface {
+public class CompWires : PanelInterface
+{
 
 	Everything _module;
 	int _modID;
@@ -24,8 +25,8 @@ public class CompWires : PanelInterface {
 	int _correctDigit;
 	string _chosenBinary;
 
-	enum Condition 
-	{ 
+	enum Condition
+	{
 		BATTERY,
 		SERIAL,
 		PARALLEL
@@ -77,7 +78,7 @@ public class CompWires : PanelInterface {
 	{
 		int num = rnd.Range(0, 64);
 		_chosenBinary = GenerateBinaryNumber(num);
-		foreach (char bit in _chosenBinary) 
+		foreach (char bit in _chosenBinary)
 		{
 			string[] wire = _allCompPossiblities[rnd.Range(0, _allCompPossiblities.Length)].Split(':');
 			if (bit.ToString() == "1")
@@ -104,7 +105,7 @@ public class CompWires : PanelInterface {
 			wire[1] = led ? "Lit" : "Unlit";
 			wire[2] = star ? "Yes" : "No";
 			wire[3] = !wire[3].EqualsAny("0", "1") ? char.ToUpper(wire[3][0]) + wire[3].Substring(1).ToLower() : wire[3] == "0" ? "Don't Cut" : "Cut";
-			_chosenWires[i] = "("+wire.Join(", ")+")";
+			_chosenWires[i] = "(" + wire.Join(", ") + ")";
 		}
 
 		_correctDigit = int.Parse(num.ToString()[num.ToString().Length - 1].ToString());
@@ -115,15 +116,15 @@ public class CompWires : PanelInterface {
 
 	public override void GenerateFinalPanel()
 	{
-		foreach (MeshRenderer led in _leds) 
+		foreach (MeshRenderer led in _leds)
 		{
 			led.material.color = unlit;
 		}
-		foreach (TextMesh tm in _stars) 
+		foreach (TextMesh tm in _stars)
 		{
 			tm.text = "";
 		}
-		for (int i = 0; i <= 5; i++) 
+		for (int i = 0; i <= 5; i++)
 		{
 			_wires[i].GetComponent<Renderer>().material = _wireColors[0];
 			_cutWires[i].GetComponent<Renderer>().material = _wireColors[0];
@@ -134,7 +135,7 @@ public class CompWires : PanelInterface {
 
 		int[] wireIndices = new int[] { 14, 6, 8, 13, 7, 11, 3, 0, 1, 10 };
 
-		for (int i = 0; i <= 5; i++) 
+		for (int i = 0; i <= 5; i++)
 		{
 			int[] indices = digits.Select(x => int.Parse(x.ToString())).ToArray();
 			string[] wire = _allCompPossiblities[wireIndices[indices[i]]].Split(':');
@@ -147,7 +148,7 @@ public class CompWires : PanelInterface {
 			wire[2] = star ? "Yes" : "No";
 			wire[3] = !wire[3].EqualsAny("0", "1") ? char.ToUpper(wire[3][0]) + wire[3].Substring(1).ToLower() : wire[3] == "0" ? "Don't Cut" : "Cut";
 			_finalWires.Add("(" + wire.Join(", ") + ")");
-			_correctPos[i] = !_wiresToBeCut[i] ? -1 : i+1; 
+			_correctPos[i] = !_wiresToBeCut[i] ? -1 : i + 1;
 		}
 
 		Debug.LogFormat("[Everything #{0}]: The final panel was generated as Complicated Wires. The total string of digits is {1}. The wires from left to right are: {2}. The correct wires to cut are {3}.", _modID, digits, _finalWires.Join(", "), _correctPos.Where(x => x != -1).Join(", "));
@@ -158,29 +159,29 @@ public class CompWires : PanelInterface {
 		int index = Array.IndexOf(_wires, km);
 		if (_wiresCut[index] || _module._modSolved) return;
 		_module._audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.WireSnip, km.transform);
-		if (!_wiresToBeCut[index] && !_wiresCut[index]) 
+		if (!_wiresToBeCut[index] && !_wiresCut[index])
 		{
-			_module.GetModule().HandleStrike();
+			_module.Strike();
 			_wiresCut[index] = true;
 			UpdateWire(index);
 			List<int> tocut = new List<int>();
-			for (int i = 0; i <= 5; i++) 
+			for (int i = 0; i <= 5; i++)
 			{
 				if (_wiresCut[i]) continue;
-				if (_wiresToBeCut[i] && !_wiresCut[i]) tocut.Add(i+1);
+				if (_wiresToBeCut[i] && !_wiresCut[i]) tocut.Add(i + 1);
 			}
-			Debug.LogFormat("[Everything #{0}]: Incorrect wire cut. Expected {1} to be cut but {2} was cut.", _modID, tocut.Join(", "), index+1);
+			Debug.LogFormat("[Everything #{0}]: Incorrect wire cut. Expected {1} to be cut but {2} was cut.", _modID, tocut.Join(", "), index + 1);
 			return;
 		}
 		UpdateWire(index);
 		_wiresCut[index] = true;
 		int total = 0;
 		int cut = _wiresToBeCut.Where(x => x == true).Count();
-		foreach (int x in _correctPos.Where(x => x != -1).Select(x => x - 1)) 
+		foreach (int x in _correctPos.Where(x => x != -1).Select(x => x - 1))
 		{
 			if (_wiresToBeCut[x] && _wiresCut[x]) total++;
 		}
-		if (total == cut) 
+		if (total == cut)
 		{
 			Debug.LogFormat("[Everything #{0}]: All wires have been successfully cut. Module solved.", _modID);
 			_module._modSolved = true;
@@ -206,11 +207,10 @@ public class CompWires : PanelInterface {
 
 	public override IEnumerator EnableComponents()
 	{
-		_module._isAnimating = true;
 		foreach (GameObject go in _wires.Select(x => x.gameObject))
 		{
 			go.GetComponent<Renderer>().enabled = true;
-			foreach (MeshRenderer mr in go.GetComponentsInChildren<Renderer>().Where(x => x.name != "Cut")) 
+			foreach (MeshRenderer mr in go.GetComponentsInChildren<Renderer>().Where(x => x.name != "Cut"))
 			{
 				mr.enabled = true;
 			}
@@ -223,13 +223,13 @@ public class CompWires : PanelInterface {
 				kh.gameObject.SetActive(true);
 			}
 		}
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator DisableComponents()
 	{
-		_module._isAnimating = true;
+
 		if (_module.GetFinalState())
 		{
 			foreach (KMHighlightable kh in _wires.Select(x => x.Highlight))
@@ -246,13 +246,13 @@ public class CompWires : PanelInterface {
 			}
 			yield return new WaitForSeconds(.1f);
 		}
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator ChangeBaseSize(float delay)
 	{
-		_module._isAnimating = true;
+
 		Vector3 baseSize = GetBaseSize();
 		Transform baseTrans = _module._moduleBasePanel.transform;
 		while (true)
@@ -272,7 +272,7 @@ public class CompWires : PanelInterface {
 			yield return new WaitForSeconds(delay);
 		}
 		baseTrans.localScale = baseSize;
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
@@ -292,16 +292,16 @@ public class CompWires : PanelInterface {
 		return new Vector3(0.1f, 0.01f, 0.1f);
 	}
 
-	string GenerateBinaryNumber(int num) 
+	string GenerateBinaryNumber(int num)
 	{
 		string s = "";
-		for (int pow = 5; pow >= 0; pow--) 
+		for (int pow = 5; pow >= 0; pow--)
 		{
 			if (num - Math.Pow(2, pow) < 0)
 			{
 				s += "0";
 			}
-			else 
+			else
 			{
 				num -= (int)Math.Pow(2, pow);
 				s += "1";
@@ -310,7 +310,7 @@ public class CompWires : PanelInterface {
 		return s;
 	}
 
-	bool ConditionTrue(Condition con) 
+	bool ConditionTrue(Condition con)
 	{
 		if (con == Condition.BATTERY) { if (_module.GetBombInfo().GetBatteryCount() >= 2) return true; }
 		if (con == Condition.PARALLEL) { if (_module.GetBombInfo().GetPortCount(Port.Parallel) >= 1) return true; }
@@ -318,13 +318,13 @@ public class CompWires : PanelInterface {
 		return false;
 	}
 
-	bool CheckWire(string condition, bool state) 
+	bool CheckWire(string condition, bool state)
 	{
 		if (state) return condition == "0" ? false : condition == "1" ? true : ConditionTrue((Condition)Enum.Parse(typeof(Condition), condition));
 		return condition == "1" ? false : condition == "0" ? true : !ConditionTrue((Condition)Enum.Parse(typeof(Condition), condition));
 	}
 
-	void UpdateWire(int index) 
+	void UpdateWire(int index)
 	{
 		_wires[index].GetComponent<Renderer>().enabled = false;
 		_wires[index].Highlight.gameObject.SetActive(false);

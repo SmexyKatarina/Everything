@@ -17,6 +17,7 @@ public class Memory : PanelInterface
 	TextMesh[] _buttonTexts;
 	TextMesh _display;
 	MeshRenderer[] _additionalMeshes;
+	TextMesh _countdownText;
 
 	int _correctDigit;
 
@@ -25,11 +26,14 @@ public class Memory : PanelInterface
 	List<int> _correctPositions = new List<int>();
 	List<int> _correctLabels = new List<int>();
 	int _stage = 0;
+	int _timer = 16;
+
+	bool _memoryBeingUpdated;
 
 	Color32 unlit = new Color32(19, 19, 19, 255);
 	Color32 lit = new Color32(15, 197, 0, 255);
 
-	public Memory(Everything _module, int _modID, int _solvedIndex, KMSelectable[] _buttons, TextMesh[] _buttonTexts, TextMesh _display, MeshRenderer[] _additionalMeshes)
+	public Memory(Everything _module, int _modID, int _solvedIndex, KMSelectable[] _buttons, TextMesh[] _buttonTexts, TextMesh _display, MeshRenderer[] _additionalMeshes, TextMesh _countdownText)
 	{
 		this._module = _module;
 		this._modID = _modID;
@@ -38,6 +42,7 @@ public class Memory : PanelInterface
 		this._buttonTexts = _buttonTexts;
 		this._display = _display;
 		this._additionalMeshes = _additionalMeshes;
+		this._countdownText = _countdownText;
 	}
 
 	public override void GeneratePanel()
@@ -76,7 +81,7 @@ public class Memory : PanelInterface
 
 		int[] digits = (_module.GetCorrectDigits() + _module.GetBombInfo().GetSerialNumberNumbers().Last().ToString()).Select(x => int.Parse(x.ToString())).ToArray();
 
-		for (int i = 2; i <= 6; i++) 
+		for (int i = 2; i <= 6; i++)
 		{
 			_additionalMeshes[i].material.color = unlit;
 		}
@@ -88,7 +93,7 @@ public class Memory : PanelInterface
 
 		for (int i = 0; i <= 4; i++)
 		{
-			_stageNumbers[i] = (digits[i]%4)+1;
+			_stageNumbers[i] = (digits[i] % 4) + 1;
 			int[] labels = new int[] { 1, 2, 3, 4 };
 			labels.Shuffle();
 			_stageLabels[i] = labels;
@@ -109,16 +114,17 @@ public class Memory : PanelInterface
 			_buttonTexts[i].text = _stageLabels[0][i].ToString();
 		}
 
-		Debug.LogFormat("[Everything #{0}]: The final panel was generated as Memory. The displays for the stages are {1}. The labels for each stage are {2}. The correct button presses are {3}.", _modID, _stageNumbers.Join(", "), _stageLabels.Select(x => x.Join(", ")).Join(" | "), _correctPositions.Select(x => x+1).Join(", "));
+		Debug.LogFormat("[Everything #{0}]: The final panel was generated as Memory. The displays for the stages are {1}. The labels for each stage are {2}. The correct button presses are {3}.", _modID, _stageNumbers.Join(", "), _stageLabels.Select(x => x.Join(", ")).Join(" | "), _correctPositions.Select(x => x + 1).Join(", "));
 	}
 
 	public override void Interact(KMSelectable km)
 	{
 		int correct = _correctPositions[_stage];
 		int pos = Array.IndexOf(_buttons, km);
+		if (_memoryBeingUpdated) return;
 		if (correct != pos)
 		{
-			_module.GetComponent<KMBombModule>().HandleStrike();
+			_module.Strike();
 			Debug.LogFormat("[Everything #{0}]: Incorrect button press on Memory. Pressed position {1} but expected position {2}.", _modID, pos + 1, correct + 1);
 			return;
 		}
@@ -133,11 +139,9 @@ public class Memory : PanelInterface
 				Debug.LogFormat("[Everything #{0}]: All buttons have been pressed correctly. Module solved.", _modID);
 				return;
 			}
-			if (_stage == 4 && !_module.GetFinalState())
-			{
-				HandlePanelSolve();
-			}
+
 			_module.StartCoroutine(UpdateStage(0.25f, 0.25f, 0.35f, _stageNumbers[_stage], _stageLabels[_stage]));
+
 			return;
 		}
 	}
@@ -159,7 +163,6 @@ public class Memory : PanelInterface
 
 	public override IEnumerator EnableComponents()
 	{
-		_module._isAnimating = true;
 		foreach (MeshRenderer mr in _additionalMeshes)
 		{
 			mr.enabled = true;
@@ -173,20 +176,19 @@ public class Memory : PanelInterface
 			_buttonTexts[i].GetComponent<Renderer>().enabled = true;
 			yield return new WaitForSeconds(0.1f);
 		}
-		foreach (KMHighlightable kh in _buttons.Select(x => x.Highlight)) 
+		foreach (KMHighlightable kh in _buttons.Select(x => x.Highlight))
 		{
 			kh.gameObject.SetActive(true);
 		}
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator DisableComponents()
 	{
-		_module._isAnimating = true;
 		foreach (KMHighlightable kh in _buttons.Select(x => x.Highlight))
 		{
-			kh.gameObject.SetActive(true);
+			kh.gameObject.SetActive(false);
 		}
 		for (int i = 3; i >= 0; i--)
 		{
@@ -201,13 +203,13 @@ public class Memory : PanelInterface
 			mr.enabled = false;
 			yield return new WaitForSeconds(0.1f);
 		}
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator ChangeBaseSize(float delay)
 	{
-		_module._isAnimating = true;
+
 		Vector3 baseSize = GetBaseSize();
 		Transform baseTrans = _module._moduleBasePanel.transform;
 		while (true)
@@ -227,7 +229,7 @@ public class Memory : PanelInterface
 			yield return new WaitForSeconds(delay);
 		}
 		baseTrans.localScale = baseSize;
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
@@ -249,7 +251,7 @@ public class Memory : PanelInterface
 
 	IEnumerator UpdateStage(float butDelay, float disDelay, float loadNewDelay, int stageNum, int[] stageButtons)
 	{
-		_module._isAnimating = true;
+		_memoryBeingUpdated = true;
 		_display.text = "";
 		yield return new WaitForSeconds(disDelay);
 		for (int i = 3; i >= 0; i--)
@@ -265,12 +267,46 @@ public class Memory : PanelInterface
 		for (int i = 0; i <= 3; i++)
 		{
 			_buttons[i].GetComponent<Renderer>().enabled = true;
-			_buttons[i].Highlight.gameObject.SetActive(true);
+			if (_module.GetFinalState())
+			{
+				_buttons[i].Highlight.gameObject.SetActive(true);
+			}
+			else if (!_module.GetFinalState())
+			{
+				if (_stage != 4)
+				{
+					_buttons[i].Highlight.gameObject.SetActive(true);
+				}
+				else
+				{
+					_buttons[i].Highlight.gameObject.SetActive(false);
+				}
+			}
 			_buttonTexts[i].text = stageButtons[i].ToString();
 			yield return new WaitForSeconds(butDelay);
 		}
 		yield return new WaitForSeconds(disDelay);
 		if (!_module.GetFinalState()) _display.text = stageNum.ToString();
+		if (_stage == 4 && !_module.GetFinalState())
+		{ 
+			_module.StartCoroutine(DelayPanelSolve());
+		}
+		_memoryBeingUpdated = false;
+		yield break;
+	}
+
+	IEnumerator DelayPanelSolve()
+	{
+		_module._isAnimating = true;
+		_countdownText.GetComponent<Renderer>().enabled = true;
+		while (_timer != 0)
+		{
+			_timer--;
+			_countdownText.text = _timer.ToString();
+			yield return new WaitForSeconds(1.0f);
+		}
+		_countdownText.GetComponent<Renderer>().enabled = false;
+		HandlePanelSolve();
 		_module._isAnimating = false;
 		yield break;
 	}

@@ -7,7 +7,8 @@ using UnityEngine;
 using KModkit;
 using rnd = UnityEngine.Random;
 
-public class WireSequence : PanelInterface {
+public class WireSequence : PanelInterface
+{
 
 	Everything _module;
 	int _modID;
@@ -76,7 +77,7 @@ public class WireSequence : PanelInterface {
 			_chosenColors.Add(m);
 			_chosenLetters.Add(let);
 			_numbers.Add(i + 1);
-			switch (m.name) 
+			switch (m.name)
 			{
 				case "Red":
 					if (_redCuts[r].Any(x => x == let.text[0]))
@@ -113,7 +114,7 @@ public class WireSequence : PanelInterface {
 			}
 		}
 
-		for (int i = 0; i <= 2; i++) 
+		for (int i = 0; i <= 2; i++)
 		{
 			Material m = _chosenColors[i];
 			TextMesh let = _chosenLetters[i];
@@ -123,7 +124,7 @@ public class WireSequence : PanelInterface {
 			_wires[wire[i]].GetComponent<Renderer>().material = m;
 		}
 		char[] chars = correctNumbers.Sum().ToString().ToCharArray();
-		_correctDigit = int.Parse(chars[chars.Length-1].ToString());
+		_correctDigit = int.Parse(chars[chars.Length - 1].ToString());
 
 		Debug.LogFormat("[Everything #{0}]: The Wire Sequence panel was generated with {1} possible cuts. The numbers of these wires are {2} and all of that added together is {3}. The correct digit for this panel is: {4}.", _modID, correctCuts, correctNumbers.Join(", "), correctNumbers.Sum(), _correctDigit);
 		HandlePanelSolve();
@@ -136,7 +137,7 @@ public class WireSequence : PanelInterface {
 		_chosenLetters.Clear();
 		_numbers.Clear();
 
-		foreach (MeshRenderer mr in _wires.Select(x => x.GetComponent<Renderer>())) 
+		foreach (MeshRenderer mr in _wires.Select(x => x.GetComponent<Renderer>()))
 		{
 			if (mr.gameObject.name.EqualsAny("Up", "Down")) continue;
 			mr.material.color = new Color32(255, 255, 255, 255);
@@ -146,16 +147,16 @@ public class WireSequence : PanelInterface {
 
 		bool[] generated = new bool[12];
 
-		for (int i = 0; i <= rnd.Range(8, 11); i++) 
+		for (int i = 0; i <= rnd.Range(8, 11); i++)
 		{
 			generated[i] = true;
 		}
 
 		generated.Shuffle();
 
-		for (int i = 0; i <= 2; i++) 
+		for (int i = 0; i <= 2; i++)
 		{
-			_tableOffsets[i] += ((digits[i]+digits[3]) + 1)%10;
+			_tableOffsets[i] += ((digits[i] + digits[3]) + 1) % 10;
 		}
 
 		for (int i = 0; i < generated.Count(); i++)
@@ -171,7 +172,7 @@ public class WireSequence : PanelInterface {
 			switch (m.name)
 			{
 				case "Red":
-					if (_redCuts[(_redTable+_tableOffsets[0])%9].Any(x => x == let.text[0]))
+					if (_redCuts[(_redTable + _tableOffsets[0]) % 9].Any(x => x == let.text[0]))
 					{
 						_correctCuts.Add(i + 1);
 						_redTable++;
@@ -180,7 +181,7 @@ public class WireSequence : PanelInterface {
 					_redTable++;
 					break;
 				case "Blue":
-					if (_blueCuts[(_blueTable + _tableOffsets[1])%9].Any(x => x == let.text[0]))
+					if (_blueCuts[(_blueTable + _tableOffsets[1]) % 9].Any(x => x == let.text[0]))
 					{
 						_correctCuts.Add(i + 1);
 						_blueTable++;
@@ -189,7 +190,7 @@ public class WireSequence : PanelInterface {
 					_blueTable++;
 					break;
 				case "Black":
-					if (_blackCuts[(_blackTable + _tableOffsets[2])%9].Any(x => x == let.text[0]))
+					if (_blackCuts[(_blackTable + _tableOffsets[2]) % 9].Any(x => x == let.text[0]))
 					{
 						_correctCuts.Add(i + 1);
 						_blackTable++;
@@ -225,7 +226,8 @@ public class WireSequence : PanelInterface {
 		int baseNum = 0;
 		int[] nums = new int[] { 1, 2, 3 };
 
-		switch (index) {
+		switch (index)
+		{
 
 			case 0:
 			case 1:
@@ -244,9 +246,9 @@ public class WireSequence : PanelInterface {
 				break;
 			case 9:
 				if (_stagePanel == 0) return;
-				if (_correctCutsCheck.Any(x => nums.Select(y => y + (_stagePanel * 3)).Contains(x))) 
+				if (_correctCutsCheck.Any(x => nums.Select(y => y + (_stagePanel * 3)).Contains(x)))
 				{
-					_module.GetModule().HandleStrike();
+					_module.Strike();
 					Debug.LogFormat("[Everything #{0}]: Can't switch panels due to wires still not cut from this panel.", _modID);
 					return;
 				}
@@ -257,7 +259,7 @@ public class WireSequence : PanelInterface {
 				if (_stagePanel == 3) return;
 				if (_correctCutsCheck.Any(x => nums.Select(y => y + (_stagePanel * 3)).Contains(x)))
 				{
-					_module.GetModule().HandleStrike();
+					_module.Strike();
 					Debug.LogFormat("[Everything #{0}]: Can't switch panels due to wires still not cut from this panel.", _modID);
 					return;
 				}
@@ -266,21 +268,21 @@ public class WireSequence : PanelInterface {
 				return;
 		}
 
-		int num = baseNum + (_stagePanel*3);
-		if (_wiresCut[num-1]) return;
+		int num = baseNum + (_stagePanel * 3);
+		if (_wiresCut[num - 1]) return;
 		_module._audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.WireSnip, km.transform);
-		if (!_correctCutsCheck.Contains(num)) 
+		if (!_correctCutsCheck.Contains(num))
 		{
-			_module.GetModule().HandleStrike();
+			_module.Strike();
 			UpdateWire(index);
-			_wiresCut[num-1] = true;
+			_wiresCut[num - 1] = true;
 			Debug.LogFormat("[Everything #{0}]: Incorrect wire cut. Expected {1} but was given {2}.", _modID, _correctCutsCheck.Join(", "), num);
 			return;
 		}
 		UpdateWire(index);
-		_wiresCut[num-1] = true;
+		_wiresCut[num - 1] = true;
 		_correctCutsCheck.Remove(num);
-		if (_correctCutsCheck.Count() == 0) 
+		if (_correctCutsCheck.Count() == 0)
 		{
 			Debug.LogFormat("[Everything #{0}]: All correct wires have been cut. Module solved.", _modID);
 			_module._modSolved = true;
@@ -307,8 +309,8 @@ public class WireSequence : PanelInterface {
 
 	public override IEnumerator EnableComponents()
 	{
-		_module._isAnimating = true;
-		foreach (MeshRenderer mr in _additional) 
+
+		foreach (MeshRenderer mr in _additional)
 		{
 			mr.enabled = true;
 			yield return new WaitForSeconds(0.005f);
@@ -324,14 +326,14 @@ public class WireSequence : PanelInterface {
 		}
 		_module.StartCoroutine(UpdatePanel());
 		while (_updating) yield return new WaitForSeconds(0.01f);
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator DisableComponents()
 	{
-		_module._isAnimating = true;
-		foreach (KMHighlightable kh in _wires.Select(x => x.Highlight)) 
+
+		foreach (KMHighlightable kh in _wires.Select(x => x.Highlight))
 		{
 			kh.gameObject.SetActive(false);
 		}
@@ -340,7 +342,7 @@ public class WireSequence : PanelInterface {
 			mr.enabled = false;
 			yield return new WaitForSeconds(0.025f);
 		}
-		foreach (MeshRenderer mr in _cutWires) 
+		foreach (MeshRenderer mr in _cutWires)
 		{
 			mr.enabled = false;
 			yield return new WaitForSeconds(0.025f);
@@ -360,13 +362,13 @@ public class WireSequence : PanelInterface {
 			mr.enabled = false;
 			yield return new WaitForSeconds(0.005f);
 		}
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator ChangeBaseSize(float delay)
 	{
-		_module._isAnimating = true;
+
 		Vector3 baseSize = GetBaseSize();
 		Transform baseTrans = _module._moduleBasePanel.transform;
 		while (true)
@@ -386,7 +388,7 @@ public class WireSequence : PanelInterface {
 			yield return new WaitForSeconds(delay);
 		}
 		baseTrans.localScale = baseSize;
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
@@ -406,14 +408,14 @@ public class WireSequence : PanelInterface {
 		return new Vector3(0.085f, 0.01f, 0.085f);
 	}
 
-	int[] WiresByLetter(string letter) 
+	int[] WiresByLetter(string letter)
 	{
-		switch (letter) 
+		switch (letter)
 		{
 			case "A":
 				return new int[] { 0, 3, 6 };
 			case "B":
-				return new int[] { 1, 4,7 };
+				return new int[] { 1, 4, 7 };
 			case "C":
 				return new int[] { 2, 5, 8 };
 			default:
@@ -421,30 +423,30 @@ public class WireSequence : PanelInterface {
 		}
 	}
 
-	IEnumerator UpdatePanel() 
+	IEnumerator UpdatePanel()
 	{
 		_updating = true;
-		foreach (KMHighlightable kh in _wires.Select(x => x.Highlight)) 
+		foreach (KMHighlightable kh in _wires.Select(x => x.Highlight))
 		{
 			if (kh.gameObject.name.EqualsAny("UpHL", "DownHL")) continue;
 			kh.gameObject.SetActive(false);
 		}
 		int count = 1;
-		foreach (TextMesh tm in _wireNumbers) 
+		foreach (TextMesh tm in _wireNumbers)
 		{
 			tm.GetComponent<Renderer>().enabled = false;
 			tm.text = (count + (_stagePanel * 3)).ToString();
 			count++;
 			yield return new WaitForSeconds(.1f);
 		}
-		for (int i = 0; i <= 8; i++) 
+		for (int i = 0; i <= 8; i++)
 		{
 			_wires[i].GetComponent<Renderer>().enabled = false;
 			_cutWires[i].enabled = false;
 			yield return new WaitForSeconds(.1f);
 		}
 
-		for (int i = 0+(_stagePanel*3); i <= 2+(_stagePanel*3); i++)
+		for (int i = 0 + (_stagePanel * 3); i <= 2 + (_stagePanel * 3); i++)
 		{
 			Material m = _chosenColors[i];
 			TextMesh let = _chosenLetters[i];
@@ -474,7 +476,7 @@ public class WireSequence : PanelInterface {
 		yield break;
 	}
 
-	void UpdateWire(int index) 
+	void UpdateWire(int index)
 	{
 		_wires[index].Highlight.gameObject.SetActive(true);
 		_wires[index].GetComponent<Renderer>().enabled = false;

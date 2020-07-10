@@ -81,7 +81,7 @@ public class Keypads : PanelInterface
 		}
 		char[] base10 = ConvertToBase10(correctPresses.ToArray()).ToString().ToCharArray();
 		_correctDigit = int.Parse(base10[base10.Length - 1].ToString());
-		Debug.LogFormat("[Everything #{0}]: The Keypads panel was generated with the characters from column {1} in order on the buttons as {2}. The base-5 number is {3} which in base-10 results to {4}. The correct digit for this panel is: {5}.", _modID, column+1, chars.Join(", "), correctPresses.Join(""), ConvertToBase10(correctPresses.ToArray()), _correctDigit);
+		Debug.LogFormat("[Everything #{0}]: The Keypads panel was generated with the characters from column {1} in order on the buttons as {2}. The base-5 number is {3} which in base-10 results to {4}. The correct digit for this panel is: {5}.", _modID, column + 1, chars.Join(", "), correctPresses.Join(""), ConvertToBase10(correctPresses.ToArray()), _correctDigit);
 		HandlePanelSolve();
 	}
 
@@ -89,17 +89,17 @@ public class Keypads : PanelInterface
 	{
 		int[] digits = _module.GetCorrectDigits().Select(x => int.Parse(x.ToString())).ToArray();
 
-		for (int i = 0; i <= 3; i++) 
+		for (int i = 0; i <= 3; i++)
 		{
 			int m = digits[i];
 			m %= 6;
-			while (i >= 1) 
+			while (i >= 1)
 			{
 				int[] dig = digits.Join("").Substring(0, i).Select(x => int.Parse(x.ToString())).ToArray();
-				while (dig.Any(x => x == m)) 
+				while (dig.Any(x => x == m))
 				{
 					m++;
-					if (m == 6) 
+					if (m == 6)
 					{
 						m = 0;
 					}
@@ -110,34 +110,34 @@ public class Keypads : PanelInterface
 		}
 		List<int> chosenPositions = new List<int>();
 		List<char> chosenCharacters = new List<char>();
-		foreach (int col in digits) 
+		foreach (int col in digits)
 		{
 			char[] column = _keypadColumns[col];
 
 			for (int i = 0; i <= 3; i++)
-            {
-                int pos = rnd.Range(4, 20);
-                while (chosenPositions.Any(x => x == pos))
-                {
-                    pos = rnd.Range(4, 20);
-                }
-                int symbol = rnd.Range(0, 7);
+			{
+				int pos = rnd.Range(4, 20);
+				while (chosenPositions.Any(x => x == pos))
+				{
+					pos = rnd.Range(4, 20);
+				}
+				int symbol = rnd.Range(0, 7);
 				chosenPositions.Add(pos);
 				chosenCharacters.Add(column[symbol]);
-                _buttonTexts[pos].text = column[symbol].ToString();
-            }
+				_buttonTexts[pos].text = column[symbol].ToString();
+			}
 		}
 		List<int> selectedAlready = new List<int>();
 
-		for (int i = 0; i <= 3; i++) 
+		for (int i = 0; i <= 3; i++)
 		{
 			char[] column = _keypadColumns[digits[i]];
 			List<int> correctPositionsColumn = new List<int>();
-			foreach (char c in column) 
+			foreach (char c in column)
 			{
-				for (int x = 0; x <= 15; x++) 
+				for (int x = 0; x <= 15; x++)
 				{
-					if (chosenCharacters[x] == c && !selectedAlready.Contains(x)) 
+					if (chosenCharacters[x] == c && !selectedAlready.Contains(x))
 					{
 						selectedAlready.Add(x);
 						correctPositionsColumn.Add(chosenPositions[x]);
@@ -148,9 +148,9 @@ public class Keypads : PanelInterface
 		}
 
 		_currentColumn = 0;
-		_currentList = _correctFinalPresses[_currentColumn].Select(x => x-3).ToList();
+		_currentList = _correctFinalPresses[_currentColumn].Select(x => x - 3).ToList();
 
-		Debug.LogFormat("[Everything #{0}]: The final panel was generated as Keypads, the chosen columns (from left to right) are: {1}. The correct button order to press in is: {2}.", _modID, digits.Select(x => x+1).Join(", "), _correctFinalPresses.Select(x => x.Select(y => y-3).Join(", ")).Join(" | "));
+		Debug.LogFormat("[Everything #{0}]: The final panel was generated as Keypads, the chosen columns (from left to right) are: {1}. The correct button order to press in is: {2}.", _modID, digits.Select(x => x + 1).Join(", "), _correctFinalPresses.Select(x => x.Select(y => y - 3).Join(", ")).Join(" | "));
 
 	}
 
@@ -162,10 +162,10 @@ public class Keypads : PanelInterface
 		km.AddInteractionPunch();
 		_module._audio.PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.ButtonPress, km.transform);
 		StringBuilder sb = new StringBuilder();
-		if (!_currentList.Contains(index + 1)) 
+		if (!_currentList.Contains(index + 1))
 		{
-			_module.GetModule().HandleStrike();
-			for (int i = 0; i < _currentList.Count(); i++) 
+			_module.Strike();
+			for (int i = 0; i < _currentList.Count(); i++)
 			{
 				if (i == _currentList.Count() - 1 && _currentList.Count() > 1)
 				{
@@ -182,10 +182,10 @@ public class Keypads : PanelInterface
 
 		_currentList.Remove(index + 1);
 
-		if (_currentList.Count() == 0) 
+		if (_currentList.Count() == 0)
 		{
 			_currentColumn++;
-			if (_currentColumn > 3) 
+			if (_currentColumn > 3)
 			{
 				_module.GetModule().HandlePass();
 				_module._modSolved = true;
@@ -225,20 +225,20 @@ public class Keypads : PanelInterface
 
 	public override IEnumerator EnableComponents()
 	{
-		_module._isAnimating = true;
-		if (_module.GetFinalState()) 
+
+		if (_module.GetFinalState())
 		{
 			for (int i = 0; i < _buttons.Length; i++)
 			{
 				_buttons[i].GetComponent<Renderer>().enabled = true;
-				_buttonTexts[i+4].GetComponent<Renderer>().enabled = true;
+				_buttonTexts[i + 4].GetComponent<Renderer>().enabled = true;
 				yield return new WaitForSeconds(0.05f);
 			}
-			foreach (KMHighlightable kmh in _buttons.Select(x => x.Highlight)) 
+			foreach (KMHighlightable kmh in _buttons.Select(x => x.Highlight))
 			{
 				kmh.gameObject.SetActive(true);
 			}
-			_module._isAnimating = false;
+			_module.StartNextPanelAnimation();
 			yield break;
 		}
 		for (int i = 0; i < _buttonMeshes.Length; i++)
@@ -247,41 +247,41 @@ public class Keypads : PanelInterface
 			_buttonTexts[i].GetComponent<Renderer>().enabled = true;
 			yield return new WaitForSeconds(0.1f);
 		}
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator DisableComponents()
 	{
-		_module._isAnimating = true;
+
 		if (_module.GetFinalState())
 		{
 			foreach (KMHighlightable kmh in _buttons.Select(x => x.Highlight))
 			{
 				kmh.gameObject.SetActive(false);
 			}
-			for (int i = _buttons.Length-1; i >= 0; i--)
+			for (int i = _buttons.Length - 1; i >= 0; i--)
 			{
 				_buttons[i].GetComponent<Renderer>().enabled = false;
 				_buttonTexts[i + 4].GetComponent<Renderer>().enabled = false;
 				yield return new WaitForSeconds(0.05f);
 			}
-			_module._isAnimating = false;
+			_module.StartNextPanelAnimation();
 			yield break;
 		}
-		for (int i = _buttonMeshes.Length-1; i >= 0; i--)
+		for (int i = _buttonMeshes.Length - 1; i >= 0; i--)
 		{
 			_buttonMeshes[i].enabled = false;
 			_buttonTexts[i].GetComponent<Renderer>().enabled = false;
 			yield return new WaitForSeconds(0.1f);
 		}
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator ChangeBaseSize(float delay)
 	{
-		_module._isAnimating = true;
+
 		Vector3 baseSize = GetBaseSize();
 		Transform baseTrans = _module._moduleBasePanel.transform;
 		while (true)
@@ -301,7 +301,7 @@ public class Keypads : PanelInterface
 			yield return new WaitForSeconds(delay);
 		}
 		baseTrans.localScale = baseSize;
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 

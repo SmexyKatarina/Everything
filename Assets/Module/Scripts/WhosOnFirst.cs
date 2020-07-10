@@ -22,7 +22,7 @@ public class WhosOnFirst : PanelInterface
 	int _correctDigit;
 
 	string[] _displays = new string[] {
-	   "", "BLANK", "C", "CEE", "DISPLAY", "FIRST", "HOLD ON", "LEAD", "LED", "LEED", "NO", "NOTHING", "OKAY", "READ", "RED", "REED", "SAYS", "SEE", "THEIR", "THERE", "THEY ARE", "THEY'RE", "UR", "YES", "YOU", "YOU ARE", "YOU'RE", "YOUR" 
+	   "", "BLANK", "C", "CEE", "DISPLAY", "FIRST", "HOLD ON", "LEAD", "LED", "LEED", "NO", "NOTHING", "OKAY", "READ", "RED", "REED", "SAYS", "SEE", "THEIR", "THERE", "THEY ARE", "THEY'RE", "UR", "YES", "YOU", "YOU ARE", "YOU'RE", "YOUR"
 	};
 	string[] _possibleWords = new string[] {
 		"BLANK", "DONE", "FIRST", "HOLD", "LEFT", "LIKE", "MIDDLE", "NEXT", "NO", "NOTHING", "OKAY", "PRESS", "READY", "RIGHT", "SURE", "U", "UH HUH", "UH UH", "UHHH", "UR", "WAIT", "WHAT", "WHAT?", "YES", "YOU ARE", "YOU", "YOUR", "YOU'RE" };
@@ -138,11 +138,11 @@ public class WhosOnFirst : PanelInterface
 
 		List<int> sum = new List<int>();
 
-		for (int i = 0; i <= 3; i++) 
+		for (int i = 0; i <= 3; i++)
 		{
 			int[] digits = _module.GetCorrectDigits().Select(x => int.Parse(x.ToString())).ToArray();
 			sum.Add(digits[i]);
-			_allFinalDisplays[i] = _unorderedDisplays[sum.Sum()%28];
+			_allFinalDisplays[i] = _unorderedDisplays[sum.Sum() % 28];
 		}
 		Debug.LogFormat("[Everything #{0}]: The final panel was generated as Who’s on First. The displays from the numbers are {1}.", _modID, _allFinalDisplays.Join(", "));
 		GenerateStage(_allFinalDisplays[_stage]);
@@ -152,14 +152,14 @@ public class WhosOnFirst : PanelInterface
 	{
 		int index = Array.IndexOf(_buttons, km);
 
-		if (index != _buttonPressHolder) 
+		if (index != _buttonPressHolder)
 		{
-			_module.GetModule().HandleStrike();
-			Debug.LogFormat("[Everything #{0}]: Incorrect button press. Expected {1} but was given {2}.", _modID, _buttonTexts[_buttonPressHolder], _buttonTexts[index]);
+			_module.Strike();
+			Debug.LogFormat("[Everything #{0}]: Incorrect button press. Expected {1} but was given {2}.", _modID, _buttonTexts[_buttonPressHolder].text, _buttonTexts[index].text);
 			return;
 		}
 		_stage++;
-		if (_stage > 3) 
+		if (_stage > 3)
 		{
 			Debug.LogFormat("[Everything #{0}]: All stages have been solved. Module Solved.", _modID);
 			_module.GetModule().HandlePass();
@@ -190,7 +190,6 @@ public class WhosOnFirst : PanelInterface
 
 	public override IEnumerator EnableComponents()
 	{
-		_module._isAnimating = true;
 		foreach (MeshRenderer mr in _additionalMeshes)
 		{
 			mr.enabled = true;
@@ -212,20 +211,20 @@ public class WhosOnFirst : PanelInterface
 			_buttonTexts[i].GetComponent<Renderer>().enabled = true;
 			yield return new WaitForSeconds(0.1f);
 		}
-		if (_module.GetFinalState()) 
+		if (_module.GetFinalState())
 		{
 			foreach (KMHighlightable kh in _buttons.Select(x => x.Highlight))
 			{
 				kh.gameObject.SetActive(true);
 			}
 		}
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator DisableComponents()
 	{
-		_module._isAnimating = true;
+
 		if (_module.GetFinalState())
 		{
 			foreach (KMHighlightable kh in _buttons.Select(x => x.Highlight))
@@ -254,13 +253,13 @@ public class WhosOnFirst : PanelInterface
 			mr.enabled = false;
 			yield return new WaitForSeconds(0.1f);
 		}
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator ChangeBaseSize(float delay)
 	{
-		_module._isAnimating = true;
+
 		Vector3 baseSize = GetBaseSize();
 		Transform baseTrans = _module._moduleBasePanel.transform;
 		while (true)
@@ -280,7 +279,7 @@ public class WhosOnFirst : PanelInterface
 			yield return new WaitForSeconds(delay);
 		}
 		baseTrans.localScale = baseSize;
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
@@ -343,7 +342,7 @@ public class WhosOnFirst : PanelInterface
 		}
 	}
 
-	void GenerateStage(string display) 
+	void GenerateStage(string display)
 	{
 		List<string> words = new List<string>();
 		for (int i = 0; i <= 5; i++)

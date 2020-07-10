@@ -33,7 +33,7 @@ public class Password : PanelInterface
 
 	int _correctDigit;
 
-	int[] _indices = new int[] { 0, 0, 0, 0, 0 };
+	int[] _indices = new int[5];
 	char[][] _displayColumns = new char[5][];
 	string _chosenWord;
 
@@ -54,43 +54,6 @@ public class Password : PanelInterface
 	{
 		int index = rnd.Range(0, _possibleWords.Length);
 		_chosenWord = _possibleWords[index];
-		int wordIndex = 0;
-
-		char[] alphabet = Enumerable.Range(0, 26).Select(z => (char)(z + 'A')).ToArray();
-
-		for (int x = 0; x <= 4; x++) 
-		{
-			char[] c = new char[5];
-			for (int y = 0; y <= 4; y++)
-			{
-				if (y == 0) { c[y] = char.ToUpper(_chosenWord[wordIndex]); wordIndex++; continue; }
-				char ch = alphabet.PickRandom();
-				while (c.Any(z => z == ch)) 
-				{
-					ch = alphabet.PickRandom();
-				}
-				c[y] = ch;
-			}
-			_displayColumns[x] = c.Shuffle();
-		}
-
-		for (int i = 0; i <= 4; i++) 
-		{
-			_letters[i].text = _displayColumns[i][0].ToString();
-		}
-
-		char[] num = (index + 1).ToString().ToCharArray();
-
-		_correctDigit = int.Parse(num[num.Length - 1].ToString());
-
-		Debug.LogFormat("[Everything #{0}]: The Password panel was generated with the word {1}. The index for this word in the table is {2}. The correct digit for this panel is: {3}.", _modID, _chosenWord.ToUpper(), index+1, _correctDigit);
-		HandlePanelSolve();
-	}
-
-	public override void GenerateFinalPanel()
-	{
-		_displayColumns = new char[5][];
-		_chosenWord = _possibleWords[int.Parse(_module.GetCorrectDigits()) % 35];
 		int wordIndex = 0;
 
 		char[] alphabet = Enumerable.Range(0, 26).Select(z => (char)(z + 'A')).ToArray();
@@ -116,21 +79,48 @@ public class Password : PanelInterface
 			_letters[i].text = _displayColumns[i][0].ToString();
 		}
 
-		Debug.LogFormat("[Everything #{0}]: The final panel was generated as Password. The four-digit number % 35 + 1 = {1}. The correct word to submit is {2}.", _modID, _chosenWord, (int.Parse(_module.GetCorrectDigits()) % 35) + 1);
+		char[] num = (index + 1).ToString().ToCharArray();
+
+		_correctDigit = int.Parse(num[num.Length - 1].ToString());
+
+		Debug.LogFormat("[Everything #{0}]: The Password panel was generated with the word {1}. The index for this word in the table is {2}. The correct digit for this panel is: {3}.", _modID, _chosenWord.ToUpper(), index + 1, _correctDigit);
+		HandlePanelSolve();
+	}
+
+	public override void GenerateFinalPanel()
+	{
+		_displayColumns = new char[5][];
+		_chosenWord = _possibleWords[int.Parse(_module.GetCorrectDigits()) % 35];
+
+		_indices = new int[5];
+
+		char[] alphabet = Enumerable.Range(0, 26).Select(z => (char)(z + 'A')).ToArray();
+
+		for (int x = 0; x <= 4; x++)
+		{
+			_displayColumns[x] = alphabet;
+		}
+
+		for (int i = 0; i <= 4; i++)
+		{
+			_letters[i].text = _displayColumns[i][0].ToString();
+		}
+
+		Debug.LogFormat("[Everything #{0}]: The final panel was generated as Password. The four-digit number % 35 + 1 = {1}. The correct word to submit is {2}.", _modID, (int.Parse(_module.GetCorrectDigits()) % 35) + 1, _chosenWord.ToUpper());
 	}
 
 	public override void Interact(KMSelectable km)
 	{
-		if (km.gameObject.name == "PassSubmit" && !_module._modSolved) 
+		if (km.gameObject.name == "PassSubmit" && !_module._modSolved)
 		{
 			string word = "";
-			foreach (string s in _letters.Select(x => x.text)) 
+			foreach (string s in _letters.Select(x => x.text))
 			{
 				word += s;
 			}
 			if (word != _chosenWord.ToUpper())
 			{
-				_module.GetModule().HandleStrike();
+				_module.Strike();
 				Debug.LogFormat("[Everything #{0}]: The word {1} is incorrect, expecting {2}.", _modID, word, _chosenWord.ToUpper());
 				return;
 			}
@@ -139,7 +129,7 @@ public class Password : PanelInterface
 				Debug.LogFormat("[Everything #{0}]: The correct word has been submitted. Module solved.", _modID);
 				_module._modSolved = true;
 				_module.GetModule().HandlePass();
-				for (int i = 0; i <= 4; i++) 
+				for (int i = 0; i <= 4; i++)
 				{
 					_letters[i].text = "SOLVE"[i].ToString();
 				}
@@ -150,14 +140,33 @@ public class Password : PanelInterface
 		bool down = name.ToLower().Contains("down");
 		int index = int.Parse(name[5].ToString()) - 1;
 		int colPos = _indices[index];
-		if (down) 
+
+		if (_module.GetFinalState())
+		{
+
+			if (down)
+			{
+				colPos++;
+				if (colPos == 26) { colPos = 0; }
+				_letters[index].text = _displayColumns[index][colPos].ToString();
+				_indices[index] = colPos;
+				return;
+			}
+			colPos--;
+			if (colPos == -1) { colPos = 25; }
+			_letters[index].text = _displayColumns[index][colPos].ToString();
+			_indices[index] = colPos;
+			return;
+		}
+
+		if (down)
 		{
 			colPos++;
 			if (colPos == 5) { colPos = 0; }
 			_letters[index].text = _displayColumns[index][colPos].ToString();
 			_indices[index] = colPos;
 			return;
-		 }
+		}
 		colPos--;
 		if (colPos == -1) { colPos = 4; }
 		_letters[index].text = _displayColumns[index][colPos].ToString();
@@ -182,40 +191,41 @@ public class Password : PanelInterface
 
 	public override IEnumerator EnableComponents()
 	{
-		_module._isAnimating = true;
-		foreach (MeshRenderer mr in _displayRenderers) 
+
+		foreach (MeshRenderer mr in _displayRenderers)
 		{
 			mr.enabled = true;
 			yield return new WaitForSeconds(.05f);
 		}
-		foreach (MeshRenderer mr in _arrowRenderers) 
+		foreach (MeshRenderer mr in _arrowRenderers)
 		{
 			mr.enabled = true;
 			yield return new WaitForSeconds(.05f);
 		}
-		foreach (TextMesh tm in _letters) 
+		foreach (TextMesh tm in _letters)
 		{
 			tm.GetComponent<Renderer>().enabled = true;
 			yield return new WaitForSeconds(.1f);
 		}
-		if (_module.GetFinalState()) 
+		if (_module.GetFinalState())
 		{
 			_submit.GetComponent<Renderer>().enabled = true;
 			_submit.GetComponentInChildren<TextMesh>().GetComponent<Renderer>().enabled = true;
+			_submit.Highlight.gameObject.SetActive(true);
 			yield return new WaitForSeconds(.1f);
 		}
-		for (int i = 0; i <= 4; i++) 
+		for (int i = 0; i <= 4; i++)
 		{
 			_upArrows[i].Highlight.gameObject.SetActive(true);
 			_downArrows[i].Highlight.gameObject.SetActive(true);
 		}
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator DisableComponents()
 	{
-		_module._isAnimating = true;
+
 		for (int i = 0; i <= 4; i++)
 		{
 			_upArrows[i].Highlight.gameObject.SetActive(false);
@@ -225,6 +235,7 @@ public class Password : PanelInterface
 		{
 			_submit.GetComponent<Renderer>().enabled = false;
 			_submit.GetComponentInChildren<TextMesh>().GetComponent<Renderer>().enabled = false;
+			_submit.Highlight.gameObject.SetActive(false);
 			yield return new WaitForSeconds(.1f);
 		}
 		foreach (TextMesh tm in _letters)
@@ -242,13 +253,13 @@ public class Password : PanelInterface
 			mr.enabled = false;
 			yield return new WaitForSeconds(.05f);
 		}
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
 	public override IEnumerator ChangeBaseSize(float delay)
 	{
-		_module._isAnimating = true;
+
 		Vector3 baseSize = GetBaseSize();
 		Transform baseTrans = _module._moduleBasePanel.transform;
 		while (true)
@@ -268,7 +279,7 @@ public class Password : PanelInterface
 			yield return new WaitForSeconds(delay);
 		}
 		baseTrans.localScale = baseSize;
-		_module._isAnimating = false;
+		_module.StartNextPanelAnimation();
 		yield break;
 	}
 
