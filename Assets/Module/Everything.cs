@@ -205,11 +205,10 @@ public class Everything : MonoBehaviour
 	{
 		if (!_modSolved && !_finalOpen)
 		{
-			if (_solvedPanels.All(x => x) && _solveableModules - _moduleCounter == 0)
+			if (_solvedPanels.All(x => x) && _solveableModules - _moduleCounter <= 0)
 			{
 				_finalOpen = true;
 				_panelUnlockCounter.GetComponent<Renderer>().enabled = false;
-
 				StartCoroutine(StartFinalAnimation());
 				return;
 			}

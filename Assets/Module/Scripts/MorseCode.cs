@@ -58,7 +58,7 @@ public class MorseCode : PanelInterface
 			_morseCodeForWord.Add(_morseCodes[Array.IndexOf(alphabet, c)]);
 		}
 
-		_correctDigit = int.Parse(_chosenWord[1][2].ToString());
+		_correctDigit = int.Parse(_chosenWord[1][3].ToString());
 
 		Debug.LogFormat("[Everything #{0}]: The Morse Code panel was generated with the word {1}. The frequency for this word is {2}. The correct digit for this panel is: {3}.", _modID, _chosenWord[0].ToUpper(), _chosenWord[1], _correctDigit);
 		HandlePanelSolve();
@@ -261,6 +261,7 @@ public class MorseCode : PanelInterface
 	{
 		_module._moduleSelectors[_solvedIndex].GetComponent<Renderer>().material.color = new Color32(0, 169, 0, 255);
 		_module.SetSolvedPanel(_solvedIndex, true);
+		Debug.LogFormat("[Everything #{0}]: After the recent panel solve, there are {1} panels left to solve.", _modID, 4 - _module.GetSolvedPanels().Select(x => x).Count());
 	}
 
 	public override Vector3 GetBaseSize()

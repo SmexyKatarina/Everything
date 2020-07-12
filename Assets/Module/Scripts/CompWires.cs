@@ -285,6 +285,7 @@ public class CompWires : PanelInterface
 	{
 		_module._moduleSelectors[_solvedIndex].GetComponent<Renderer>().material.color = new Color32(0, 169, 0, 255);
 		_module.SetSolvedPanel(_solvedIndex, true);
+		Debug.LogFormat("[Everything #{0}]: After the recent panel solve, there are {1} panels left to solve.", _modID, 4 - _module.GetSolvedPanels().Select(x => x).Count());
 	}
 
 	public override Vector3 GetBaseSize()
@@ -313,7 +314,7 @@ public class CompWires : PanelInterface
 	bool ConditionTrue(Condition con)
 	{
 		if (con == Condition.BATTERY) { if (_module.GetBombInfo().GetBatteryCount() >= 2) return true; }
-		if (con == Condition.PARALLEL) { if (_module.GetBombInfo().GetPortCount(Port.Parallel) >= 1) return true; }
+		if (con == Condition.PARALLEL) { if (_module.GetBombInfo().GetSerialNumberNumbers().Last() % 2 == 0) return true; }
 		if (con == Condition.SERIAL) { if (_module.GetBombInfo().GetPortCount(Port.Serial) >= 1) return true; }
 		return false;
 	}
