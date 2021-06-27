@@ -83,7 +83,7 @@ public class Wires : PanelInterface
 		HandlePanelSolve();
 	}
 
-	public override void GenerateFinalPanel()
+		public override void GenerateFinalPanel()
 	{
 		int[] wireNumbers = new int[] { 1, 5, 5, 5, 5, 0, 0, 5, 1, 3, 0, 1, 0, 2, 3, 5, 3 };
 		int rule = _module.GetCorrectDigits().Select(x => int.Parse(x.ToString())).ToList().Sum() % 17;
@@ -135,11 +135,11 @@ public class Wires : PanelInterface
 				{
 					if (mr.gameObject.name.Contains("Filler") || mr.gameObject.name.Contains("Holder")) mr.enabled = true;
 				}
-				foreach (KMHighlightable kh in _wires.Select(x => x.Highlight))
-				{
-					kh.gameObject.SetActive(true);
-				}
 				yield return new WaitForSeconds(0.1f);
+			}
+			foreach (KMHighlightable kh in _wires.Select(x => x.Highlight))
+			{
+				kh.gameObject.SetActive(true);
 			}
 			_module.StartNextPanelAnimation();
 			yield break;
@@ -160,6 +160,25 @@ public class Wires : PanelInterface
 
 	public override IEnumerator DisableComponents()
 	{
+
+		if (_module.GetFinalState())
+		{
+			foreach (KMHighlightable kh in _wires.Select(x => x.Highlight))
+			{
+				kh.gameObject.SetActive(false);
+			}
+			for (int i = 0; i <= 5; i++)
+			{
+				_wires[i].GetComponent<Renderer>().enabled = false;
+				foreach (MeshRenderer mr in _wires[i].GetComponentsInChildren<MeshRenderer>())
+				{
+					if (mr.gameObject.name.Contains("Filler") || mr.gameObject.name.Contains("Holder")) mr.enabled = false;
+				}
+				yield return new WaitForSeconds(0.1f);
+			}
+			_module.StartNextPanelAnimation();
+			yield break;
+		}
 
 		for (int i = 5; i >= 0; i--)
 		{
@@ -252,7 +271,7 @@ public class Wires : PanelInterface
 	{
 		_module._moduleSelectors[_solvedIndex].GetComponent<Renderer>().material.color = new Color32(0, 169, 0, 255);
 		_module.SetSolvedPanel(_solvedIndex, true);
-		Debug.LogFormat("[Everything #{0}]: After the recent panel solve, there are {1} panels left to solve.", _modID, 4 - _module.GetSolvedPanels().Select(x => x).Count());
+		Debug.LogFormat("[Everything #{0}]: After the recent panel solve, there are {1} panels left to solve.", _modID, 4 - _module.GetSolvedPanels().Where(x => x).Count());
 	}
 
 	public override Vector3 GetBaseSize()

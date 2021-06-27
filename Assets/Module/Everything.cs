@@ -8,7 +8,6 @@ using rnd = UnityEngine.Random;
 
 public class Everything : MonoBehaviour
 {
-
 	public KMBombInfo _bomb;
 	public KMAudio _audio;
 
@@ -98,6 +97,22 @@ public class Everything : MonoBehaviour
 	public TextMesh _mazeLEDDirection;
 	public KMSelectable _mazeReset;
 
+	// Colour Flash
+	public MeshRenderer _cfDisplay;
+	public TextMesh _cfDisplayText;
+	public KMSelectable[] _cfButtons;
+
+	// Piano Keys	
+	public TextMesh _pkSymbolText;
+	public MeshRenderer _pkSymbolDisplay;
+	public KMSelectable[] _pkKeys;
+	public MeshRenderer[] _pkKeyRenderers;
+
+	// Semaphore
+	public MeshRenderer[] _semaFlagRenders;
+	public Transform[] _semaFlagTransforms;
+	public KMSelectable[] _semaButtons;
+
 	// Specifically for Logging
 	static int _modIDCount = 1;
 	int _modID;
@@ -113,11 +128,14 @@ public class Everything : MonoBehaviour
 	public bool _isAnimating = false;
 	public bool _finalOpen = false;
 	string[] _ignoreHighlights = new string[] { "ModuleHighlight" };
-	string[] _possibleModuleNames = new string[] { "Wires", "The Button", "Keypads", "Simon Says", "Who’s on First", "Memory", "Complicated Wires", "Wire Sequence", "Morse Code", "Password", "Maze" };
+	string[] _possibleModuleNames = new string[] { "Wires", "The Button", "Keypads", "Simon Says", "Who’s on First", "Memory", "Complicated Wires", "Wire Sequence", "Morse Code", "Password", 
+		"Maze", "Colour Flash", "Piano Keys", "Semaphore" };
+	string[] _vanillaSupported = new string[] { "Wires", "The Button", "Keypads", "Simon Says", "Who’s on First", "Memory", "Complicated Wires", "Wire Sequence", "Morse Code", "Password", "Maze" };
+	string[] _moddedSupported = new string[] { "Colour Flash", "Piano Keys", "Semaphore" };
 	string _correctDigits = "";
 	bool[] _solvedPanels = new bool[4];
 	Coroutine _controller = null;
-    Coroutine _panelController = null;
+	Coroutine _panelController = null;
 
 	string _chosenFinal;
 	PanelInterface _chosenFinalPanel;
@@ -164,6 +182,7 @@ public class Everything : MonoBehaviour
 	void Start()
 	{
 		StartCoroutine(DisableHighlights());
+		_chosenModules.Add("Semaphore");
 		ChooseModules();
 		foreach (PanelInterface pi in _chosenPanels)
 		{
@@ -171,11 +190,11 @@ public class Everything : MonoBehaviour
 			pi.GeneratePanel();
 			_correctDigits += pi.GetCorrectDigit().ToString();
 		}
-		/*int test = Array.IndexOf(_chosenModules.ToArray(), "Password");
-		if (test != -1) { _chosenPanels[test].GenerateFinalPanel(); _finalOpen = true; }*/
+		int test = Array.IndexOf(_chosenModules.ToArray(), "Semaphore");
+		if (test != -1) { _chosenPanels[test].GenerateFinalPanel(); _finalOpen = true; }
 		Debug.LogFormat("[Everything #{0}]: Taking all of the correct digits from each panel gives: {1}.", _modID, _correctDigits);
 		_solveableModules = _bomb.GetSolvableModuleNames().Where(x => !_ignoreList.Contains(x)).Count();
-		_panelUnlockCounter.text = _moduleCounter.ToString();
+		_panelUnlockCounter.text = _solveableModules.ToString();
 		Debug.LogFormat("[Everything #{0}]: The final panel will open after all panels and its detected {1} solvable modules have been solved.", _modID, _solveableModules);
 
 		if (_solveableModules == 0 && _solvedPanels.All(x => x))
@@ -203,7 +222,8 @@ public class Everything : MonoBehaviour
 
 	void FixedUpdate()
 	{
-		if (!_modSolved && !_finalOpen)
+
+		/*if (!_modSolved && !_finalOpen)
 		{
 			if (_solvedPanels.All(x => x) && _solveableModules - _moduleCounter <= 0)
 			{
@@ -215,13 +235,13 @@ public class Everything : MonoBehaviour
 			if (_moduleCounter != _bomb.GetSolvedModuleNames().Count())
 			{
 				_moduleCounter = _bomb.GetSolvedModuleNames().Count();
-				_panelUnlockCounter.text = _moduleCounter.ToString();
+				_panelUnlockCounter.text = (_solveableModules-_moduleCounter).ToString();
 			}
-			if (_solvedPanels.All(x => x) || _solveableModules - _moduleCounter == 0 && _panelUnlockCounter.color != _unlockTextColors[1])
+			if ((_solvedPanels.All(x => x) || _solveableModules - _moduleCounter == 0) && _panelUnlockCounter.color != _unlockTextColors[1])
 			{
 				_panelUnlockCounter.color = _unlockTextColors[1];
 			}
-		}
+		}*/
 	}
 
 	//
@@ -271,6 +291,7 @@ public class Everything : MonoBehaviour
 				_activePanel = index;
 				return;
 			}
+			if (_chosenFinal != null && !_finalOpen) _finalOpen = true;
 			StartCoroutine(DelayComponents(index, true));
 			UpdateModuleButton(index, _activePanel);
 			_activePanel = index;
@@ -278,35 +299,37 @@ public class Everything : MonoBehaviour
 		}
 
 		if (index > 3 || _chosenPanels.ElementAt(index) == null || _activePanel == index || _isAnimating) { return; }
+		//if (_finalOpen) _finalOpen = false;
 		StartCoroutine(DelayComponents(index, false));
 		UpdateModuleButton(index, _activePanel);
 		_activePanel = index;
 	}
-
+	
 	void ChooseModules()
 	{
 		List<string> temp = new List<string>();
-		foreach (string moduleName in _bomb.GetSolvableModuleNames())
+		temp.Add("Semaphore");
+		/*foreach (string moduleName in _bomb.GetSolvableModuleNames())
 		{
-			if (_possibleModuleNames.Any(x => x == moduleName))
+			if (_moddedSupported.Any(x => x == moduleName))
 			{
 				if (_chosenModules.Contains(moduleName)) continue;
 				_chosenModules.Add(moduleName);
 				temp.Add(moduleName);
 			}
-		}
+		}*/
 		Debug.Log(_chosenModules.Count() != 0 ? String.Format("[Everything #{0}]: Found {1} modules on the bomb that Everything supports: {2}.", _modID, _chosenModules.Count(), _chosenModules.Join(", ")) : String.Format("[Everything #{0}]: Found no supported modules.", _modID));
 		if (_chosenModules.Count() != 4)
 		{
 			int co = _chosenModules.Count();
 			for (int i = 0; i < 4 - co; i++)
 			{
-				int module = rnd.Range(0, _possibleModuleNames.Length);
-				while (_chosenModules.Contains(_possibleModuleNames[module]))
+				int module = rnd.Range(0, _vanillaSupported.Length);
+				while (_chosenModules.Contains(_vanillaSupported[module]))
 				{
-					module = rnd.Range(0, _possibleModuleNames.Length);
+					module = rnd.Range(0, _vanillaSupported.Length);
 				}
-				_chosenModules.Add(_possibleModuleNames[module]);
+				_chosenModules.Add(_vanillaSupported[module]);
 			}
 			Debug.LogFormat("[Everything #{0}]: Didn't find enough modules on the bomb that Everything supports. Adding {1} more from random vanillas: {2}", _modID, 4 - temp.Count(), _chosenModules.Where(x => !temp.Contains(x)).Join(", "));
 		}
@@ -420,6 +443,27 @@ public class Everything : MonoBehaviour
 				}
 				_mazeReset.OnInteract = delegate () { maze.Interact(_mazeReset); return false; };
 				return maze;
+			case "Colour Flash":
+				ColourFlash cf = new ColourFlash(this, _modID, solvedIndex, _cfDisplay, _cfDisplayText, _cfButtons);
+				foreach (KMSelectable km in _cfButtons) 
+				{
+					km.OnInteract = delegate () { cf.Interact(km); return false; };
+				}
+				return cf;
+			case "Piano Keys":
+				PianoKeys pk = new PianoKeys(this, _modID, solvedIndex, _pkSymbolText, _pkSymbolDisplay, _pkKeys, _pkKeyRenderers);
+				foreach (KMSelectable km in _pkKeys)
+				{
+					km.OnInteract = delegate () { pk.Interact(km); return false; };
+				}
+				return pk;
+			case "Semaphore":
+				Semaphore sema = new Semaphore(this, _modID, solvedIndex, _semaFlagRenders, _semaFlagTransforms, _semaButtons);
+				foreach (KMSelectable km in _semaButtons) 
+				{
+					km.OnInteract = delegate () { sema.Interact(km); return false; };
+				}
+				return sema;
 			default:
 				return null;
 		}
@@ -427,12 +471,7 @@ public class Everything : MonoBehaviour
 
 	string[] GetModuleSpriteNames()
 	{
-		List<string> names = new List<string>();
-		foreach (Sprite s in _moduleIcons)
-		{
-			names.Add(s.name);
-		}
-		return names.ToArray();
+		return _moduleIcons.Select(x => x.name).ToArray();
 	}
 
 	//
@@ -453,7 +492,7 @@ public class Everything : MonoBehaviour
 			}
 			yield break;
 		}
-        if (_activePanel != -1) { _panelController = StartCoroutine(_chosenPanels[_activePanel].DisableComponents()); }
+		if (_activePanel != -1) { _panelController = StartCoroutine(_chosenPanels[_activePanel].DisableComponents()); }
 		while (_panelController != null) { yield return null; }
 		if (!_skipEnable)
 		{

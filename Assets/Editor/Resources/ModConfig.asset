@@ -14,12 +14,12 @@ MonoBehaviour:
   id: kataEverything
   title: Everything [BETA]
   author: Katarina
-  description: "Everything v0.3-BETA\"We\u2019re in the endgame now.\"\n\"We\u2019re
-    in the endgame now.\"\n\nNOTE: It is in Beta, it may or will have bugs. Nonetheless,
-    ping me in discord if it does, so I can fix it.\n\nModule ID: kataEverything\n\r\nModule
-    Idea created by: EpicToast\nModule Idea continued by: Asew54321\nModule Implemented
-    by: Katarina\r\n\r\nManual is available on GitHub:\n\n\r\nIf there are any problems
-    that you may have, contact me via Discord: Smexy Ahri#5259"
-  version: 0.2-BETA
+  description: "Everything v0.3.1-BETA\n\"We\u2019re in the endgame now.\"\n\nNOTE:
+    It is in Beta, it may or will have bugs. Nonetheless, ping me in discord if it
+    does, so I can fix it.\n\nModule ID: kataEverything\n\r\nModule Idea created by:
+    EpicToast\nModule Idea continued by: Asew54321\nModule Implemented by: Katarina\r\n\r\nManual
+    is available on GitHub:\n\n\r\nIf there are any problems that you may have, contact
+    me via Discord: Smexy Ahri#5259"
+  version: 0.3.1-BETA
   outputFolder: build
   previewImage: {fileID: 2800000, guid: dbb3d526e3f6f7e43b223a4262d29685, type: 3}

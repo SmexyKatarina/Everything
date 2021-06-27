@@ -401,7 +401,7 @@ public class WireSequence : PanelInterface
 	{
 		_module._moduleSelectors[_solvedIndex].GetComponent<Renderer>().material.color = new Color32(0, 169, 0, 255);
 		_module.SetSolvedPanel(_solvedIndex, true);
-		Debug.LogFormat("[Everything #{0}]: After the recent panel solve, there are {1} panels left to solve.", _modID, 4-_module.GetSolvedPanels().Select(x => x).Count());
+		Debug.LogFormat("[Everything #{0}]: After the recent panel solve, there are {1} panels left to solve.", _modID, 4 - _module.GetSolvedPanels().Where(x => x).Count());
 	}
 
 	public override Vector3 GetBaseSize()
